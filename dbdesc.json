@@ -1,0 +1,121 @@
+{
+  "testdata_sets": [
+    "id", 
+    "site", 
+    "url", 
+    "date"
+  ], 
+  "redirects": [
+    "id", 
+    "data_set", 
+    "ua", 
+    "engine", 
+    "urls"
+  ], 
+  "regression_results": [
+    "id", 
+    "site", 
+    "ua", 
+    "engine", 
+    "date", 
+    "bug_id", 
+    "result", 
+    "screenshot"
+  ], 
+  "js_problems": [
+    "id", 
+    "data_set", 
+    "ua", 
+    "engine", 
+    "stack", 
+    "message"
+  ], 
+  "uastrings": [
+    "id", 
+    "ua", 
+    "human_desc"
+  ], 
+  "contacts": [
+    "id", 
+    "site", 
+    "form", 
+    "form_source", 
+    "email", 
+    "email_source", 
+    "twitter", 
+    "twitter_source", 
+    "facebook", 
+    "facebook_source", 
+    "linkedin", 
+    "linkedin_source", 
+    "gplus", 
+    "gplus_source"
+  ], 
+  "test_data": [
+    "id", 
+    "data_set", 
+    "site", 
+    "ua", 
+    "engine", 
+    "state", 
+    "failing_because", 
+    "hasHandheldFriendlyMeta", 
+    "hasViewportMeta", 
+    "hasMobileOptimizedMeta", 
+    "mobileLinkOrScriptUrl", 
+    "hasVideoTags", 
+    "pageWidthFitsScreen", 
+    "hasHtmlOrBodyMobileClass", 
+    "iscroll", 
+    "link-prerender", 
+    "m3u8-links", 
+    "m3u8-videos", 
+    "mobify-check", 
+    "modernizr-at-media", 
+    "old-brightcove", 
+    "sencha-touch", 
+    "window-orientation-usage", 
+    "wptouch-check", 
+    "other_plugin_data"
+  ], 
+  "comments": [
+    "id", 
+    "site", 
+    "date", 
+    "handled", 
+    "type", 
+    "comment", 
+    "screenshot", 
+    "github_nick"
+  ], 
+  "css_problems": [
+    "id", 
+    "data_set", 
+    "ua", 
+    "engine", 
+    "file", 
+    "selector", 
+    "property", 
+    "value"
+  ], 
+  "human_review": [
+    "id", 
+    "site", 
+    "ua", 
+    "date", 
+    "state", 
+    "type", 
+    "comment"
+  ], 
+  "domains": [
+    "id", 
+    "domain"
+  ], 
+  "screenshots": [
+    "id", 
+    "data_set", 
+    "ua", 
+    "engine", 
+    "file"
+  ]
+}

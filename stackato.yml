@@ -1,0 +1,27 @@
+name: compatdataviewer
+framework:
+    type: python
+
+processes:
+    web: $STACKATO_UWSGI --static-map /files/=/files/ --callable app
+
+ignores: ["tmp", ".git", "update.bat", "prep.bat", "dbconf.pyc"]
+
+url:
+ - compatdataviewer.com.paas.allizom.org
+
+requirements:
+    pypm:
+      - tldextract
+      - Flask
+    pip:
+      - mysqlclient
+
+services:
+  ${name}-files: filesystem
+  ${name}-db: mysql
+
+hooks:
+  post-staging:
+    - ln -s "$STACKATO_FILESYSTEM"/ files
+    - python dbinit.py
