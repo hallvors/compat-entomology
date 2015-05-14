@@ -45,7 +45,7 @@ table_queries = [
     # a table for JS problems..
     'CREATE TABLE IF NOT EXISTS js_problems (id INT AUTO_INCREMENT, data_set INT, ua INT, engine TINYTEXT, stack TEXT, message TINYTEXT, PRIMARY KEY(id))',
     # a table for redirects..
-    'CREATE TABLE IF NOT EXISTS redirects (id INT AUTO_INCREMENT, data_set INT, ua INT, engine TINYTEXT, urls TEXT, PRIMARY KEY(id))',
+    'CREATE TABLE IF NOT EXISTS redirects (id INT AUTO_INCREMENT, data_set INT, ua INT, engine TINYTEXT, urls TEXT, final_url TEXT, PRIMARY KEY(id))',
     # a meta table for testdata sets, helps track data that belongs together..
     'CREATE TABLE IF NOT EXISTS testdata_sets (id INT AUTO_INCREMENT, site INT, url TEXT, date TIMESTAMP, PRIMARY KEY(id))'
 ];

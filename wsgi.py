@@ -147,15 +147,14 @@ def datasaver(topic, domain):
   if topic == 'data' and 'data' in request.form and request.form['data']:
     try:
       post_data = json.loads(request.form['data'])
+      # now we have a "set" of data for this site, with various UA strings and maybe engines
+      # we register a "dataset id" for this submit by creating a row in the testdata_sets table
+      cur_2.execute('INSERT INTO testdata_sets (site, url) VALUES (%s, %s)', (domain_id, post_data['initial_url']))
+      con.commit()
+      dataset_id = cur_2.lastrowid
       for uastring in post_data:
         uastring_id = get_existing_ua_id_or_insert(uastring)
         for engine in post_data[uastring]:
-          # now we have a "set" of data for this engine, UA and site
-          # we register a "dataset id" for it
-          # TODO: would it be better to have a single "set" for all engines and/or UA strings in post data?
-          cur_2.execute('INSERT INTO testdata_sets (site, url) VALUES (%s, %s)', (domain_id, post_data[uastring][engine]['final_url']))
-          con.commit()
-          dataset_id = cur_2.lastrowid
           print('Now processing dataset %s' % dataset_id)
           # Fill tables.. Now "test_data"
           insert_data = {'data_set':dataset_id, 'site':domain_id}
