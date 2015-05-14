@@ -8,7 +8,7 @@ dbinit.py sets up a number of MySQL tables:
 * domains - assigns a number to each site we track. All other tables use values from domains.id to refer to a site
 * testdata_sets - tracks each "submit" of data for a site. Each "submit" contains data for a single site only, but can contain multiple types of data - from regression tests via screenshots to css issues, and for several UAs and engines. Most other result tables have a data_set field which gets values from testdata_set.id
 * redirects - tracks redirects during loading of a site. Redirects are stored as tab-separated URLs.
-regression_results - tracks per-bug regression tests and the results (true/false)
+* regression_results - tracks per-bug regression tests and the results (true/false)
 * js_problems - tracks JS execution errors
 * screenshots - tracks submitted screenshots
 * css_problems - issues with -webkit-style CSS, mostly
