@@ -140,7 +140,7 @@ def datasaver(topic, domain):
 
   domain_id = get_existing_domain_id(domain)
   dataset_id = -1
-  regression_insert_ids = []
+  regression_insert_ids = {}
   # If topic is "data" we have a POST form field called data
   # which is actually a chunk of JSON. It requires some parsing and
   # massage to throw the data into the right table(s)..
@@ -156,6 +156,7 @@ def datasaver(topic, domain):
           cur_2.execute('INSERT INTO testdata_sets (site, url) VALUES (%s, %s)', (domain_id, post_data[uastring][engine]['final_url']))
           con.commit()
           dataset_id = cur_2.lastrowid
+          print('Now processing dataset %s' % dataset_id)
           # Fill tables.. Now "test_data"
           insert_data = {'data_set':dataset_id, 'site':domain_id}
           for prop in post_data[uastring][engine]:
@@ -228,12 +229,12 @@ def datasaver(topic, domain):
         uastring_id = get_existing_ua_id_or_insert(file_desc[file_obj.filename]['ua'])
         if dataset_id == -1:
           # testdata_sets: site, UA id, engine, URL
-          insert_data = {'site': domain_id, 'url': request.form['final_url']}
+          insert_data = {'site': domain_id, 'url': post_data[file_desc[file_obj.filename]['ua']][file_desc[file_obj.filename]['engine']]['final_url']}
           obj_to_table(insert_data, 'testdata_sets', cur_2)
           con.commit()
           dataset_id = cur_2.lastrowid
         extension = os.path.splitext(file_obj.filename)[1]
-        target_filename = tempfile.NamedTemporaryFile(delete=False, prefix=str(domain_id)+'_', suffix='.' + extension, dir=target_filepath )
+        target_filename = tempfile.NamedTemporaryFile(delete=False, prefix=str(domain_id)+'_', suffix=extension, dir=target_filepath )
         # secure_filename(file_obj.filename)
         # screenshots: data_set, file
         insert_id = obj_to_table({"data_set": dataset_id, 'ua': uastring_id, 'engine': file_desc[file_obj.filename]['engine'], "file": os.path.basename(target_filename.name)}, 'screenshots', cur_2)
