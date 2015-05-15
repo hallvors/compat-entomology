@@ -3,7 +3,7 @@ framework:
     type: python
 
 processes:
-    web: $STACKATO_UWSGI --static-map /files/=/files/ --callable app
+    web: $STACKATO_UWSGI --static-map /files/=files/ --static-map /screenshot/=files/screenshots/  --callable app
 
 ignores: ["tmp", ".git", "update.bat", "prep.bat", "dbconf.pyc"]
 
