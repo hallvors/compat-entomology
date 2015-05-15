@@ -1,4 +1,4 @@
-name: compatdataviewer
+name: compatentomology
 framework:
     type: python
 
@@ -8,7 +8,7 @@ processes:
 ignores: ["tmp", ".git", "update.bat", "prep.bat", "dbconf.pyc"]
 
 url:
- - compatdataviewer.com.paas.allizom.org
+ - compatentomology.com.paas.allizom.org
 
 requirements:
     pypm:
