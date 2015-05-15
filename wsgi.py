@@ -317,48 +317,6 @@ def normalize_domain(domain):
       tmp = '%s.%s' % (tmp.domain, tmp.suffix)
   return tmp
 
-def head_html(title):
-  return str("""<!DOCTYPE html">
-  <html>
-  <head>
-
-  <script src="//www.mozilla.org/tabzilla/media/js/tabzilla.js"></script>
-  <link href="//www.mozilla.org/tabzilla/media/css/tabzilla.css" rel="stylesheet" />
-  <link rel="StyleSheet" lang="text/css" href="/css/main.css">
-  <title>WebCompatDataViewer - %s</title>
-  </head>
-  <div id="wrapper">
-  <a href="http://www.mozilla.org/" id="tabzilla">mozilla</a>
-  <h1>%s</h1>
-
-  """ % (title,title))
-
-allowed_files = [ '/timeline.html', '/screenshots/index.htm' ]
-for fn in glob.glob( './data/*.*'):
-  allowed_files.append(fn[1:].replace('\\', '/'))
-for fn in glob.glob( './data/testing/*.*'):
-  allowed_files.append(fn[1:].replace('\\', '/'))
-for fn in glob.glob( './js/*.*'):
-  allowed_files.append(fn[1:].replace('\\', '/'))
-for fn in glob.glob( './css/*.*'):
-  allowed_files.append(fn[1:].replace('\\', '/'))
-for fn in glob.glob( './images/*.*'):
-  allowed_files.append(fn[1:].replace('\\', '/'))
-for fn in glob.glob( './extensions/*.*'):
-  allowed_files.append(fn[1:].replace('\\', '/'))
-
-def get_mime_type(f):
-  m_type = mimetypes.guess_type(f)[0]
-  if m_type is None:
-    if '.json' in f:
-      m_type = 'application/json'
-    elif '.xpi' in f:
-      m_type = 'application/x-xpinstall'
-    elif '.ttf' in f:
-      m_type = 'application/x-font-ttf'
-    else:
-      m_type = ''
-  return m_type
 
 def describe_ua(uastr):
   # This will never be perfect. Just so you know I know that..
