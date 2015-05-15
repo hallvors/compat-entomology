@@ -11,8 +11,10 @@ app = Flask(__name__)
 
 dbdesc = json.load(open('dbdesc.json', 'r'))
 
-UPLOAD_PATH_PREFIX = os.path.sep + os.path.join('files', 'screenshots')
-
+UPLOAD_PATH_PREFIX = os.path.join('files', 'screenshots') + os.path.sep
+#UPLOAD_PATH_PREFIX = os.path.sep + os.path.join('fs', 'compatdataviewer-files') + os.path.sep
+if not os.path.exists(UPLOAD_PATH_PREFIX):
+  os.mkdir(UPLOAD_PATH_PREFIX)
 # prepare talking to the database before every request..
 @app.before_request
 def before_req():
@@ -157,7 +159,7 @@ def datasaver(topic, domain):
         for engine in post_data[uastring]:
           print('Now processing dataset %s' % dataset_id)
           # Fill tables.. Now "test_data"
-          insert_data = {'data_set':dataset_id, 'site':domain_id}
+          insert_data = {'data_set':dataset_id, 'site':domain_id, 'engine': engine, 'ua': uastring_id}
           for prop in post_data[uastring][engine]:
             if prop in dbdesc['test_data'] and prop != 'id':
               if type(post_data[uastring][engine][prop]) == list:
