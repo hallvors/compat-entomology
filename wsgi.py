@@ -55,7 +55,7 @@ data is typically posted per UA. Multiple UAs may be tested at once.
 This means we'll have
 POST /post/domain.tld
 
-data: {
+data={
     "uastring":{
         "engine": {
             redirects: [ 'url1', 'url2'..],
@@ -67,7 +67,8 @@ data: {
             failing_because: ["style_problems", "old_brightcove", ...],
             "regression_results": [ {"bug_id":"wc1066", "result":0,"screenshot":"file_name"} ]
         }
-    }
+    },
+    "initial_url": "..."
 }
 
 All posts that include images must also have this:
@@ -104,7 +105,6 @@ def dataviewer(topic, domain):
   domain_id = get_existing_domain_id(domain, False)
   if not domain_id:
     return ('No data found for this site', 404)
-
   output = {'domain':domain, 'id':domain_id }
   query_to_object('SELECT * FROM testdata_sets WHERE site = %s ORDER BY id DESC LIMIT 2' % domain_id, output, 'datasets')
   # we need a list of datasets to select related screenshots, CSS problems, JS problems and test data..
@@ -112,11 +112,21 @@ def dataviewer(topic, domain):
   for the_set in output['datasets']:
     recent_datasets.append(the_set['id'])
   if len(recent_datasets):
-    query_to_object('SELECT * FROM screenshots WHERE data_set IN (%s) ORDER BY id DESC LIMIT 4' % json.dumps(recent_datasets)[1:-1], output, 'recent_screenshots')
+    query_to_object('SELECT * FROM screenshots WHERE data_set IN (%s) ORDER BY id DESC LIMIT 4' % json.dumps(recent_datasets)[1:-1], output, 'recent_screenshots', screenshot_url)
     query_to_object('SELECT * FROM css_problems WHERE data_set IN (%s) ORDER BY id DESC LIMIT 25' % json.dumps(recent_datasets)[1:-1], output, 'recent_css_problems')
     query_to_object('SELECT * FROM js_problems WHERE data_set IN (%s) ORDER BY id DESC LIMIT 25' % json.dumps(recent_datasets)[1:-1], output, 'recent_js_problems')
     query_to_object('SELECT * FROM test_data WHERE data_set IN (%s) ORDER BY id DESC LIMIT 25' % json.dumps(recent_datasets)[1:-1], output, 'recent_other_problems')
-
+    # We also need a list of the UA strings used in these data sets..
+    all_ua_ids = set([])
+    for row in output['recent_screenshots']:
+      all_ua_ids.add(row['ua'])
+    for row in output['recent_other_problems']:
+      all_ua_ids.add(row['ua'])
+    for row in output['recent_css_problems']:
+      all_ua_ids.add(row['ua'])
+    for row in output['recent_js_problems']:
+      all_ua_ids.add(row['ua'])
+    query_to_object('SELECT DISTINCT id, ua FROM uastrings WHERE id IN (%s) ORDER BY id ASC' % json.dumps(list(all_ua_ids))[1:-1], output, 'uastrings', add_ua_desc)
   return jsonify(**output)
 
 @app.route('/testform', methods = ['GET'])
@@ -177,8 +187,6 @@ def datasaver(topic, domain):
 
             # get property names from insert_data
             obj_to_table(insert_data, 'test_data', cur_2)
-            #the_query = 'INSERT INTO test_data (' + ','.join(insert_data.keys()) + ') VALUES (%%('+ (')s, %%('.join(insert_data.keys())) + ')s)'
-            #cur_2.execute(the_query, **insert_data)
 
           # Fill tables.. Now "css_problems"
           if 'css_problems' in post_data[uastring][engine]:
@@ -290,7 +298,7 @@ def get_existing_ua_id_or_insert(datastr):
     datastr_id = g.cur_2.lastrowid
   return datastr_id
 
-def query_to_object(query, obj, prop):
+def query_to_object(query, obj, prop, massage_method=None):
   try:
     g.cur_1.execute(query)
   except Exception, e:
@@ -298,8 +306,22 @@ def query_to_object(query, obj, prop):
   if prop not in obj:
     obj[prop] = []
   for i in range(g.cur_1.rowcount):
-    obj[prop].append(g.cur_1.fetchone())
+    if massage_method:
+      obj[prop].append(massage_method(g.cur_1.fetchone()))
+    else:
+      obj[prop].append(g.cur_1.fetchone())
 
+# Some methods to "massage" data from the database for presentation
+def screenshot_url(row):
+  url_parts = request.url.split('/')
+  # replace the 'topic' with the word 'screenshot'
+  url_parts[3] = 'screenshot'
+  row['file'] = '%s/%s' % ('/'.join(url_parts),row['file'])
+  return row
+
+def add_ua_desc(row):
+  row['human_desc'] = describe_ua(row['ua'])
+  return row
 
 def sanitize(dirty_html):
   dirty_html = dirty_html.replace('&', '&amp;')
@@ -344,7 +366,7 @@ def describe_ua(uastr):
   else:
     platform = 'Desktop'
   # version
-  v = re.search(r"(Firefox\/|Chrome\/|rv:)(\d+)", uastr)
+  v = re.search(r"(Firefox\/|Chrome\/|rv:|Version\/)(\d+)", uastr)
   if v:
     version = v.groups()[1]
   return "%s%s%s" % (name, platform, version)
