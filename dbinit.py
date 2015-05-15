@@ -6,21 +6,21 @@ con, cur_1, cur_2 = database_connect()
 
 table_queries = [
     # comment out these first queries if you don't want a full DB reset..
-    'DROP TABLE IF EXISTS domains',
-    'DROP TABLE IF EXISTS uastrings',
-    'DROP TABLE IF EXISTS comments',
-    'DROP TABLE IF EXISTS test_data',
-    'DROP TABLE IF EXISTS contacts',
-    'DROP TABLE IF EXISTS screenshots',
-    'DROP TABLE IF EXISTS css_problems',
-    'DROP TABLE IF EXISTS js_problems',
-    'DROP TABLE IF EXISTS regression_results',
-    'DROP TABLE IF EXISTS redirects',
-    'DROP TABLE IF EXISTS testdata_sets',
+#    'DROP TABLE IF EXISTS domains',
+#    'DROP TABLE IF EXISTS uastrings',
+#    'DROP TABLE IF EXISTS comments',
+#    'DROP TABLE IF EXISTS test_data',
+#    'DROP TABLE IF EXISTS contacts',
+#    'DROP TABLE IF EXISTS screenshots',
+#    'DROP TABLE IF EXISTS css_problems',
+#    'DROP TABLE IF EXISTS js_problems',
+#    'DROP TABLE IF EXISTS regression_results',
+#    'DROP TABLE IF EXISTS redirects',
+#    'DROP TABLE IF EXISTS testdata_sets',
     # set up the 'domains' table - our master list of sites.
     'CREATE TABLE IF NOT EXISTS domains (id INT AUTO_INCREMENT, domain VARCHAR(253) CHARACTER SET utf8 COLLATE utf8_bin, PRIMARY KEY(id), UNIQUE(domain))',
     # set up helper table: UA strings
-    'CREATE TABLE IF NOT EXISTS uastrings (id INT AUTO_INCREMENT, ua TEXT CHARACTER SET utf8 COLLATE utf8_bin, human_desc TINYTEXT, PRIMARY KEY(id))',
+    'CREATE TABLE IF NOT EXISTS uastrings (id INT AUTO_INCREMENT, ua TEXT CHARACTER SET utf8 COLLATE utf8_bin, PRIMARY KEY(id))',
     # set up table for human review results
     # TODO: hook into GitHub to be able to associate submitted comments with GitHub user name..?
     'CREATE TABLE IF NOT EXISTS comments (id INT AUTO_INCREMENT, site INT, date TIMESTAMP, handled TINYINT(1) DEFAULT 0, type ENUM("screenshot", "testing", "thumbsupdown"), comment TEXT, screenshot INT, github_nick TINYTEXT, PRIMARY KEY(id))',
