@@ -97,36 +97,49 @@ def nothing():
 
 @app.route('/<topic>/<domain>', methods = ['GET'])
 def dataviewer(topic, domain):
-  try:
-    domain = normalize_domain(domain)
-  except Exception, e:
-    print(e)
-    return ('Name of site not valid? Processing it causes an error: %s' % e, 500)
-  domain_id = get_existing_domain_id(domain, False)
-  if not domain_id:
-    return ('No data found for this site', 404)
-  output = {'domain':domain, 'id':domain_id }
-  query_to_object('SELECT * FROM testdata_sets WHERE site = %s ORDER BY id DESC LIMIT 2' % domain_id, output, 'datasets')
-  # we need a list of datasets to select related screenshots, CSS problems, JS problems and test data..
   recent_datasets = []
-  for the_set in output['datasets']:
-    recent_datasets.append(the_set['id'])
-  if len(recent_datasets):
-    query_to_object('SELECT * FROM screenshots WHERE data_set IN (%s) ORDER BY id DESC LIMIT 4' % json.dumps(recent_datasets)[1:-1], output, 'recent_screenshots', screenshot_url)
-    query_to_object('SELECT * FROM css_problems WHERE data_set IN (%s) ORDER BY id DESC LIMIT 25' % json.dumps(recent_datasets)[1:-1], output, 'recent_css_problems')
-    query_to_object('SELECT * FROM js_problems WHERE data_set IN (%s) ORDER BY id DESC LIMIT 25' % json.dumps(recent_datasets)[1:-1], output, 'recent_js_problems')
-    query_to_object('SELECT * FROM test_data WHERE data_set IN (%s) ORDER BY id DESC LIMIT 25' % json.dumps(recent_datasets)[1:-1], output, 'recent_other_problems')
-    # We also need a list of the UA strings used in these data sets..
-    all_ua_ids = set([])
-    for row in output['recent_screenshots']:
-      all_ua_ids.add(row['ua'])
-    for row in output['recent_other_problems']:
-      all_ua_ids.add(row['ua'])
-    for row in output['recent_css_problems']:
-      all_ua_ids.add(row['ua'])
-    for row in output['recent_js_problems']:
-      all_ua_ids.add(row['ua'])
-    query_to_object('SELECT DISTINCT id, ua FROM uastrings WHERE id IN (%s) ORDER BY id ASC' % json.dumps(list(all_ua_ids))[1:-1], output, 'uastrings', add_ua_desc)
+  if is_number(domain):
+    # we're looking up information about a test data set
+    recent_datasets = [domain]
+    output = {'dataset': domain}
+  else:
+    try:
+      domain = normalize_domain(domain)
+    except Exception, e:
+      print(e)
+      return ('Name of site not valid? Processing it causes an error: %s' % e, 500)
+    domain_id = get_existing_domain_id(domain, False)
+    if not domain_id:
+      return ('No data found for this site', 404)
+    output = {'domain':domain, 'id':domain_id }
+    query_to_object('SELECT * FROM testdata_sets WHERE site = %s ORDER BY id DESC LIMIT 4' % domain_id, output, 'datasets')
+  # we need a list of datasets to select related screenshots, CSS problems, JS problems and test data..
+    for the_set in output['datasets']:
+      recent_datasets.append(the_set['id'])
+  if topic == 'data':
+    if len(recent_datasets):
+      query_to_object('SELECT * FROM screenshots WHERE data_set IN (%s) ORDER BY id DESC LIMIT 4' % json.dumps(recent_datasets)[1:-1], output, 'recent_screenshots', screenshot_url)
+      query_to_object('SELECT * FROM css_problems WHERE data_set IN (%s) ORDER BY id DESC LIMIT 25' % json.dumps(recent_datasets)[1:-1], output, 'recent_css_problems')
+      query_to_object('SELECT * FROM js_problems WHERE data_set IN (%s) ORDER BY id DESC LIMIT 25' % json.dumps(recent_datasets)[1:-1], output, 'recent_js_problems')
+      query_to_object('SELECT * FROM test_data WHERE data_set IN (%s) ORDER BY id DESC LIMIT 25' % json.dumps(recent_datasets)[1:-1], output, 'recent_other_problems')
+      query_to_object('SELECT * FROM redirects WHERE data_set IN (%s) ORDER BY id DESC LIMIT 25' % json.dumps(recent_datasets)[1:-1], output, 'redirects')
+      # We also need a list of the UA strings used in these data sets..
+      all_ua_ids = set([])
+      for row in output['recent_screenshots']:
+        all_ua_ids.add(row['ua'])
+      for row in output['recent_other_problems']:
+        all_ua_ids.add(row['ua'])
+      for row in output['recent_css_problems']:
+        all_ua_ids.add(row['ua'])
+      for row in output['recent_js_problems']:
+        all_ua_ids.add(row['ua'])
+      for row in output['redirects']:
+        all_ua_ids.add(row['ua'])
+      query_to_object('SELECT DISTINCT id, ua FROM uastrings WHERE id IN (%s) ORDER BY id ASC' % json.dumps(list(all_ua_ids))[1:-1], output, 'uastrings', add_ua_desc)
+  elif topic == 'comments':
+    query_to_object('SELECT * FROM comments WHERE site = %s LIMIT 15 ORDER BY id DESC' % domain_id, output, 'comments')
+  elif topic == 'contacts':
+    query_to_object('SELECT * FROM contacts WHERE site = %s LIMIT 15 ORDER BY id DESC' % domain_id, output, 'contacts')
   return jsonify(**output)
 
 @app.route('/testform', methods = ['GET'])
@@ -141,7 +154,6 @@ def datasaver(topic, domain):
   cur_2 = g.cur_2
   if topic == '' or domain == '':
     return ('Required information missing: site etc.', 500)
-
   # by this point we have a "topic" ('data', 'screenshots', 'contacts' etc)
   # and we have a presumed domain name. Let's check if the domain name is
   # tracked already..
@@ -152,6 +164,7 @@ def datasaver(topic, domain):
 
   domain_id = get_existing_domain_id(domain)
   dataset_id = -1
+  # This list will be used to map regressions and screenshots
   regression_insert_ids = {}
   # If topic is "data" we have a POST form field called data
   # which is actually a chunk of JSON. It requires some parsing and
@@ -159,9 +172,10 @@ def datasaver(topic, domain):
   if topic == 'data' and 'data' in request.form and request.form['data']:
     try:
       post_data = json.loads(request.form['data'])
+      initial_url = request.form['initial_url']
       # now we have a "set" of data for this site, with various UA strings and maybe engines
       # we register a "dataset id" for this submit by creating a row in the testdata_sets table
-      cur_2.execute('INSERT INTO testdata_sets (site, url) VALUES (%s, %s)', (domain_id, post_data['initial_url']))
+      cur_2.execute('INSERT INTO testdata_sets (site, url) VALUES (%s, %s)', (domain_id, initial_url))
       con.commit()
       dataset_id = cur_2.lastrowid
       for uastring in post_data:
@@ -202,17 +216,17 @@ def datasaver(topic, domain):
             cur_2.executemany(the_query, '\t'.join(post_data[uastring][engine]['redirects']))
           # Fill tables.. Now "regression_results"
           # "regression_results": "site","ua","engine","bug_id","result","screenshot"
-
+          #pdb.set_trace()
           if 'regression_results' in post_data[uastring][engine]:
             for reg_res in post_data[uastring][engine]['regression_results']:
               reg_res['data_set'] = dataset_id
               reg_res['ua'] = uastring_id
               reg_res['engine'] = engine
               # TODO: add "comment" if "result" is text rather than true/false?
-
-              # todo: screenshot has wrong data type at this point..
+              the_screenshot = reg_res['screenshot']
+              del reg_res['screenshot']
               insert_id = obj_to_table(reg_res, 'regression_results', cur_2)
-              regression_insert_ids[insert_id] = reg_res['screenshot']
+              regression_insert_ids[insert_id] = the_screenshot
 
     except Exception, e:
       print(e)
@@ -234,6 +248,7 @@ def datasaver(topic, domain):
       print(target_filepath)
       if not os.path.exists(target_filepath):
         os.mkdir(target_filepath)
+      #pdb.set_trace()
       if file_obj.filename in file_desc:
         uastring_id = get_existing_ua_id_or_insert(file_desc[file_obj.filename]['ua'])
         if dataset_id == -1:
@@ -259,6 +274,13 @@ def datasaver(topic, domain):
       else:
         return ('missing file details for %s' % file_obj.filename, 500)
   return 'Done'
+
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
 
 def filter_props(incoming_obj, prop_list, outgoing_obj={}, other_obj={}):
   for prop in incoming_obj:
