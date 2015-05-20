@@ -123,6 +123,7 @@ def dataviewer(topic, domain):
       query_to_object('SELECT * FROM js_problems WHERE data_set IN (%s) ORDER BY id DESC LIMIT 25' % json.dumps(recent_datasets)[1:-1], output, 'recent_js_problems')
       query_to_object('SELECT * FROM test_data WHERE data_set IN (%s) ORDER BY id DESC LIMIT 25' % json.dumps(recent_datasets)[1:-1], output, 'recent_other_problems')
       query_to_object('SELECT * FROM redirects WHERE data_set IN (%s) ORDER BY id DESC LIMIT 25' % json.dumps(recent_datasets)[1:-1], output, 'redirects')
+      query_to_object('SELECT * FROM regression_results WHERE data_set IN (%s) ORDER BY id DESC LIMIT 25' % json.dumps(recent_datasets)[1:-1], output, 'regression_results')
       # We also need a list of the UA strings used in these data sets..
       all_ua_ids = set([])
       for row in output['recent_screenshots']:
@@ -134,6 +135,8 @@ def dataviewer(topic, domain):
       for row in output['recent_js_problems']:
         all_ua_ids.add(row['ua'])
       for row in output['redirects']:
+        all_ua_ids.add(row['ua'])
+      for row in output['regression_results']:
         all_ua_ids.add(row['ua'])
       query_to_object('SELECT DISTINCT id, ua FROM uastrings WHERE id IN (%s) ORDER BY id ASC' % json.dumps(list(all_ua_ids))[1:-1], output, 'uastrings', add_ua_desc)
   elif topic == 'comments':
