@@ -261,14 +261,15 @@ def datasaver(topic, domain):
         target_filename = tempfile.NamedTemporaryFile(delete=False, prefix=str(domain_id)+'_', suffix=extension, dir=target_filepath )
         # secure_filename(file_obj.filename)
         # screenshots: data_set, file
-        insert_id = obj_to_table({"data_set": dataset_id, 'ua': uastring_id, 'engine': file_desc[file_obj.filename]['engine'], "file": os.path.basename(target_filename.name)}, 'screenshots', cur_2)
+        img_insert_id = obj_to_table({"data_set": dataset_id, 'ua': uastring_id, 'engine': file_desc[file_obj.filename]['engine'], "file": os.path.basename(target_filename.name)}, 'screenshots', cur_2)
         file_obj.save(target_filename.name)
+
 
         if len(regression_insert_ids.keys()):
           # update regression_results to set screenshot field
-          for reg_ins_id, fname in regression_insert_ids:
-            if fname == file_obj.filename:
-              cur_2.query('UPDATE regression_results SET screenshot = %s WHERE id = %s' % (insert_id,reg_ins_id))
+          for this_reg_ins_id in regression_insert_ids.keys():
+            if regression_insert_ids[this_reg_ins_id] == file_obj.filename:
+              cur_2.execute('UPDATE regression_results SET screenshot = %s WHERE id = %s' % (img_insert_id,this_reg_ins_id))
         con.commit()
 
       else:
@@ -396,6 +397,6 @@ def describe_ua(uastr):
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', '8000'))
-    app.run('localhost', port=port)
     print('Serving on port %s' % port)
+    app.run('localhost', port=port)
 
