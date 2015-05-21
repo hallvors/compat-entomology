@@ -1,5 +1,5 @@
 import os, json, re, glob, sys, mimetypes, tldextract, tempfile
-from flask import Flask, request, session, g, redirect, url_for, jsonify, logging
+from flask import Flask, request, session, g, redirect, url_for, jsonify, logging, make_response
 from werkzeug import secure_filename
 #from wsgiref.simple_server import make_server
 #from cgi import parse_qs, escape
@@ -25,6 +25,16 @@ def teardown_req(response):
   db = getattr(g, 'con', None)
   if db:
     db.close()
+
+def cors_friendly(f):
+  """This decorator adds CORS headers"""
+  def decorated_function(*args, **kwargs):
+    resp = make_response(f(*args, **kwargs))
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp
+  return decorated_function
+
+
 
 """
 /*
@@ -96,6 +106,7 @@ def nothing():
   return 'Nothing to see here (what are you looking for?)'
 
 @app.route('/<topic>/<domain>', methods = ['GET'])
+@cors_friendly
 def dataviewer(topic, domain):
   recent_datasets = []
   if is_number(domain):
