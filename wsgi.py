@@ -227,7 +227,7 @@ def datasaver(topic, domain):
           # Fill tables.. Now "redirects"
           if 'redirects' in post_data[uastring][engine]:
             the_query = 'INSERT INTO redirects (data_set, ua, engine, urls) VALUES (%s, %s, "%s", %%s)' % (dataset_id, uastring_id, engine )
-            cur_2.executemany(the_query, '\t'.join(post_data[uastring][engine]['redirects']))
+            cur_2.execute(the_query, '\t'.join(post_data[uastring][engine]['redirects']))
           # Fill tables.. Now "regression_results"
           # "regression_results": "site","ua","engine","bug_id","result","screenshot"
           #pdb.set_trace()
