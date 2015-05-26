@@ -44,7 +44,8 @@ def cors_friendly(f):
  URLs we support
  /data/domain.tld - JSON data
  /screenshots/domain.tld - JSON data (list of screenshots w/UA, meta data)
- /screenshot/domain.tld/filename.png - screenshot (maps to /files/screenshots/domain.tld/filename.png)
+ /screenshot/domain.tld/filename.png -
+    screenshot (maps to /files/screenshots/domain.tld/filename.png)
   (should be handled with --static-map ..)
  MAYBE
  /contacts/domain.tld
@@ -54,7 +55,8 @@ def cors_friendly(f):
 To ADD data:
 POST /data/domain.tld
 
-Basically all URLs have the structure "topic" / "domain.tld" / optional specifics
+Basically all URLs have the structure
+    "topic" / "domain.tld" / optional specifics
 
 We may add support for query string arguments like ?timerange or ?limits
 
@@ -96,15 +98,14 @@ file_desc:{
     }
 }
 
-on the other hand, we can have simpler posts for comments, contact data and such:
+on the other hand, we can have simpler posts for comments,
+contact data and such:
 
 POST /contacts/domain.tld
 POST /comments/domain.tld =>
 post field names map directly to table names:
 tables.contacts etc lists the fields
-
-
-  """
+"""
 
 
 @app.route('/', methods=['GET'])
