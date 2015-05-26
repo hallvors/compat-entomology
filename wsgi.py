@@ -73,12 +73,14 @@ data={
         "engine": {
             redirects: [ 'url1', 'url2'..],
             final_url: '',
-            css_problems: [ {'file':'', 'selector':'', 'property':'', 'value': ''... ],
+            css_problems: [
+                {'file':'', 'selector':'', 'property':'', 'value': ''... ],
             js_problems: [ {stack:'', message:''}, ... ],
             plugin_results: { ... },
             state: 1|0,
             failing_because: ["style_problems", "old_brightcove", ...],
-            "regression_results": [ {"bug_id":"wc1066", "result":0,"screenshot":"file_name"} ]
+                "regression_results": [
+                    {"bug_id":"wc1066", "result":0,"screenshot":"file_name"} ]
         }
     },
     "initial_url": "..."
