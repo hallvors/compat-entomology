@@ -1,0 +1,3 @@
+tldextract
+flask
+MySQLdb
