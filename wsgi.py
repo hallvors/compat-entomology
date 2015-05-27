@@ -370,7 +370,7 @@ def sanitize(dirty_html):
 def normalize_domain(domain):
   tmp = tldextract.extract('http://%s' % domain)
   # we remove "meaningless-ish" prefixes only
-  if not tmp.subdomain in ['www', '', 'm']:
+  if not tmp.subdomain in ['www', '']:
       tmp = '%s.%s.%s' % (tmp.subdomain, tmp.domain, tmp.suffix)
   else:
       tmp = '%s.%s' % (tmp.domain, tmp.suffix)
