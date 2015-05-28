@@ -16,12 +16,10 @@ if not os.path.exists(UPLOAD_PATH_PREFIX):
     os.mkdir(UPLOAD_PATH_PREFIX)
 # prepare talking to the database before every request..
 
-
 @app.before_request
 def before_req():
     g.con, g.cur_1, g.cur_2 = database_connect()
 # ..but be polite enough to close it afterwards
-
 
 @app.teardown_request
 def teardown_req(response):
@@ -197,6 +195,13 @@ def datasaver(topic, domain):
     # by this point we have a "topic" ('data', 'screenshots', 'contacts' etc)
     # and we have a presumed domain name. Let's check if the domain name is
     # tracked already..
+    try:
+        domain = normalize_domain(domain)
+    except Exception, e:
+        print(e)
+        return ('Name of site not valid? Processing it causes an error: %s'
+                % e, 500)
+    domain_id = get_existing_domain_id(domain) # this will add domain to DB if not already tracked
     try:
         post_data = json.loads(request.form['data'])
         initial_url = request.form['initial_url']
