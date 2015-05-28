@@ -198,67 +198,78 @@ def datasaver(topic, domain):
     # and we have a presumed domain name. Let's check if the domain name is
     # tracked already..
     try:
-<<<<<<< HEAD
-        domain = normalize_domain(domain)
-=======
-      post_data = json.loads(request.form['data'])
-      initial_url = request.form['initial_url']
-      # now we have a "set" of data for this site, with various UA strings and maybe engines
-      # we register a "dataset id" for this submit by creating a row in the testdata_sets table
-      cur_2.execute('INSERT INTO testdata_sets (site, url) VALUES (%s, %s)', (domain_id, initial_url))
-      con.commit()
-      dataset_id = cur_2.lastrowid
-      for uastring in post_data:
-        uastring_id = get_existing_ua_id_or_insert(uastring)
-        for engine in post_data[uastring]:
-          print('Now processing dataset %s' % dataset_id)
-          # Fill tables.. Now "test_data"
-          insert_data = {'data_set':dataset_id, 'site':domain_id, 'engine': engine, 'ua': uastring_id}
-          for prop in post_data[uastring][engine]:
-            if prop in dbdesc['test_data'] and prop != 'id':
-              if type(post_data[uastring][engine][prop]) == list:
-                insert_data[prop] = '\t'.join(post_data[uastring][engine][prop])
-              else:
-                insert_data[prop] = post_data[uastring][engine][prop]
-          other_plugin_data = {}
-          if 'plugin_results' in post_data[uastring][engine]:
-            for prop in post_data[uastring][engine]['plugin_results']:
-              if prop in dbdesc['test_data']:
-                insert_data[prop] = post_data[uastring][engine]['plugin_results'][prop]
-              else:
-                other_plugin_data[prop] = post_data[uastring][engine]['plugin_results'][prop]
-            insert_data['other_plugin_data'] = json.dumps(other_plugin_data)
+        post_data = json.loads(request.form['data'])
+        initial_url = request.form['initial_url']
+        # now we have a "set" of data for this site, with various UA strings and maybe engines
+        # we register a "dataset id" for this submit by creating a row in the
+        # testdata_sets table
+        cur_2.execute(
+            'INSERT INTO testdata_sets (site, url) VALUES (%s, %s)', (domain_id, initial_url))
+        con.commit()
+        dataset_id = cur_2.lastrowid
+        for uastring in post_data:
+            uastring_id = get_existing_ua_id_or_insert(uastring)
+            for engine in post_data[uastring]:
+                print('Now processing dataset %s' % dataset_id)
+                # Fill tables.. Now "test_data"
+                insert_data = {
+                    'data_set': dataset_id, 'site': domain_id, 'engine': engine, 'ua': uastring_id}
+                for prop in post_data[uastring][engine]:
+                    if prop in dbdesc['test_data'] and prop != 'id':
+                        if type(post_data[uastring][engine][prop]) == list:
+                            insert_data[prop] = '\t'.join(
+                                post_data[uastring][engine][prop])
+                        else:
+                            insert_data[prop] = post_data[
+                                uastring][engine][prop]
+                other_plugin_data = {}
+                if 'plugin_results' in post_data[uastring][engine]:
+                    for prop in post_data[uastring][engine]['plugin_results']:
+                        if prop in dbdesc['test_data']:
+                            insert_data[prop] = post_data[uastring][
+                                engine]['plugin_results'][prop]
+                        else:
+                            other_plugin_data[prop] = post_data[
+                                uastring][engine]['plugin_results'][prop]
+                    insert_data['other_plugin_data'] = json.dumps(
+                        other_plugin_data)
 
-            # get property names from insert_data
-            obj_to_table(insert_data, 'test_data', cur_2)
+                    # get property names from insert_data
+                    obj_to_table(insert_data, 'test_data', cur_2)
 
-          # Fill tables.. Now "css_problems"
-          if 'css_problems' in post_data[uastring][engine]:
-            the_query = 'INSERT INTO css_problems (data_set, ua, engine, file, selector, property, value) VALUES (%s, %s, "%s", %%(file)s, %%(selector)s, %%(property)s, %%(value)s)' % (dataset_id,uastring_id,engine)
-            cur_2.executemany(the_query, post_data[uastring][engine]['css_problems'])
-          # Fill tables.. Now "js_problems"
-          if 'js_problems' in post_data[uastring][engine]:
-            the_query = 'INSERT INTO js_problems (data_set, ua, engine, stack, message) VALUES (%s, %s, "%s", %%(stack)s, %%(message)s)' % (dataset_id,uastring_id,engine)
-            cur_2.executemany(the_query, post_data[uastring][engine]['js_problems'])
-          # Fill tables.. Now "redirects"
-          if 'redirects' in post_data[uastring][engine]:
-            the_query = 'INSERT INTO redirects (data_set, ua, engine, urls) VALUES (%s, %s, "%s", %%s)' % (dataset_id, uastring_id, engine )
-            cur_2.execute(the_query, '\t'.join(post_data[uastring][engine]['redirects']))
-          # Fill tables.. Now "regression_results"
-          # "regression_results": "site","ua","engine","bug_id","result","screenshot"
-          #pdb.set_trace()
-          if 'regression_results' in post_data[uastring][engine]:
-            for reg_res in post_data[uastring][engine]['regression_results']:
-              reg_res['data_set'] = dataset_id
-              reg_res['ua'] = uastring_id
-              reg_res['engine'] = engine
-              # TODO: add "comment" if "result" is text rather than true/false?
-              the_screenshot = reg_res['screenshot']
-              del reg_res['screenshot']
-              insert_id = obj_to_table(reg_res, 'regression_results', cur_2)
-              regression_insert_ids[insert_id] = the_screenshot
-
->>>>>>> upstream/master
+                # Fill tables.. Now "css_problems"
+                if 'css_problems' in post_data[uastring][engine]:
+                    the_query = 'INSERT INTO css_problems (data_set, ua, engine, file, selector, property, value) VALUES (%s, %s, "%s", %%(file)s, %%(selector)s, %%(property)s, %%(value)s)' % (
+                        dataset_id, uastring_id, engine)
+                    cur_2.executemany(
+                        the_query, post_data[uastring][engine]['css_problems'])
+                # Fill tables.. Now "js_problems"
+                if 'js_problems' in post_data[uastring][engine]:
+                    the_query = 'INSERT INTO js_problems (data_set, ua, engine, stack, message) VALUES (%s, %s, "%s", %%(stack)s, %%(message)s)' % (
+                        dataset_id, uastring_id, engine)
+                    cur_2.executemany(
+                        the_query, post_data[uastring][engine]['js_problems'])
+                # Fill tables.. Now "redirects"
+                if 'redirects' in post_data[uastring][engine]:
+                    the_query = 'INSERT INTO redirects (data_set, ua, engine, urls) VALUES (%s, %s, "%s", %%s)' % (
+                        dataset_id, uastring_id, engine)
+                    cur_2.execute(
+                        the_query, '\t'.join(post_data[uastring][engine]['redirects']))
+                # Fill tables.. Now "regression_results"
+                # "regression_results": "site","ua","engine","bug_id","result","screenshot"
+                # pdb.set_trace()
+                if 'regression_results' in post_data[uastring][engine]:
+                    for reg_res in post_data[uastring][engine]['regression_results']:
+                        reg_res['data_set'] = dataset_id
+                        reg_res['ua'] = uastring_id
+                        reg_res['engine'] = engine
+                        # TODO: add "comment" if "result" is text rather than
+                        # true/false?
+                        the_screenshot = reg_res['screenshot']
+                        del reg_res['screenshot']
+                        insert_id = obj_to_table(
+                            reg_res, 'regression_results', cur_2)
+                        regression_insert_ids[insert_id] = the_screenshot
     except Exception, e:
         return ('Name of site not valid? Processing it causes an error: %s'
                 % e, 500)
@@ -387,7 +398,7 @@ def datasaver(topic, domain):
                 extension = os.path.splitext(file_obj.filename)[1]
                 target_filename = tempfile.NamedTemporaryFile(
                     delete=False,
-                    prefix=str(domain_id)+'_',
+                    prefix=str(domain_id) + '_',
                     suffix=extension, dir=target_filepath)
                 # secure_filename(file_obj.filename)
                 # screenshots: data_set, file
@@ -504,13 +515,13 @@ def sanitize(dirty_html):
 
 
 def normalize_domain(domain):
-  tmp = tldextract.extract('http://%s' % domain)
-  # we remove "meaningless-ish" prefixes only
-  if not tmp.subdomain in ['www', '']:
-      tmp = '%s.%s.%s' % (tmp.subdomain, tmp.domain, tmp.suffix)
-  else:
-      tmp = '%s.%s' % (tmp.domain, tmp.suffix)
-  return tmp
+    tmp = tldextract.extract('http://%s' % domain)
+    # we remove "meaningless-ish" prefixes only
+    if not tmp.subdomain in ['www', '']:
+        tmp = '%s.%s.%s' % (tmp.subdomain, tmp.domain, tmp.suffix)
+    else:
+        tmp = '%s.%s' % (tmp.domain, tmp.suffix)
+    return tmp
 
 
 def describe_ua(uastr):
