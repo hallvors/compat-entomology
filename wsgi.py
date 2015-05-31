@@ -5,6 +5,7 @@ import tldextract
 import tempfile
 from flask import Flask, request, g, jsonify, make_response
 from dbconf import database_connect
+from utils import get_existing_domain_id
 
 app = Flask(__name__)
 
@@ -14,15 +15,16 @@ UPLOAD_PATH_PREFIX = os.path.join('files', 'screenshots') + os.path.sep
 # UPLOAD_PATH_PREFIX = os.path.sep + os.path.join('fs', 'compatdataviewer-files') + os.path.sep
 if not os.path.exists(UPLOAD_PATH_PREFIX):
     os.mkdir(UPLOAD_PATH_PREFIX)
-# prepare talking to the database before every request..
+
 
 @app.before_request
 def before_req():
+    # prepare talking to the database before every request..
     g.con, g.cur_1, g.cur_2 = database_connect()
-# ..but be polite enough to close it afterwards
 
 @app.teardown_request
 def teardown_req(response):
+    # ..but be polite enough to close it afterwards
     db = getattr(g, 'con', None)
     if db:
         db.close()
@@ -454,21 +456,6 @@ def obj_to_table(insert_data, table, cur_2):
 
 # http://stackoverflow.com/questions/6618344/python-mysqldb-and-escaping-table-names
 # ??
-
-
-def get_existing_domain_id(datastr, insert_if_not_found=True):
-    datastr_id = None
-    g.cur_1.execute('SELECT id FROM domains WHERE domain LIKE %s',  (datastr,))
-    if g.cur_1.rowcount > 0:
-        row = g.cur_1.fetchone()
-        datastr_id = row['id']
-    elif insert_if_not_found:
-        g.cur_2.execute(
-            'INSERT INTO domains (domain) VALUES (%s)',  (datastr,))
-        g.con.commit()
-        datastr_id = g.cur_2.lastrowid
-    return datastr_id
-
 
 def get_existing_ua_id_or_insert(datastr):
     g.cur_1.execute('SELECT id FROM uastrings WHERE ua LIKE %s',  (datastr,))
