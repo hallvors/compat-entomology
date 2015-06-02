@@ -1,3 +1,4 @@
 tldextract
 flask
 mysqlclient
+requests

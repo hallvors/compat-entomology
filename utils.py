@@ -1,3 +1,6 @@
+from flask import Flask, request, g, jsonify, make_response
+
+
 def get_existing_domain_id(datastr, insert_if_not_found=True):
     datastr_id = None
     g.cur_1.execute('SELECT id FROM domains WHERE domain LIKE %s',  (datastr,))

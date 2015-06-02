@@ -3,10 +3,11 @@ import json
 import re
 import tldextract
 import tempfile
+import requests
 from flask import Flask, request, g, jsonify, make_response
 from dbconf import database_connect
 from utils import get_existing_domain_id
-
+from report import generate_site_diff_report
 app = Flask(__name__)
 
 dbdesc = json.load(open('dbdesc.json', 'r'))
@@ -16,6 +17,7 @@ UPLOAD_PATH_PREFIX = os.path.join('files', 'screenshots') + os.path.sep
 if not os.path.exists(UPLOAD_PATH_PREFIX):
     os.mkdir(UPLOAD_PATH_PREFIX)
 
+AWCY_DATA_URLPREFIX = 'http://arewecompatibleyet.com/data/'
 
 @app.before_request
 def before_req():
@@ -47,6 +49,7 @@ def cors_friendly(f):
  /screenshot/domain.tld/filename.png -
     screenshot (maps to /files/screenshots/domain.tld/filename.png)
   (should be handled with --static-map ..)
+/list/awcy_list_shortname
  MAYBE
  /contacts/domain.tld
  /comments/domain.tld
@@ -117,6 +120,15 @@ def nothing():
 @cors_friendly
 def dataviewer(topic, domain):
     recent_datasets = []
+    if topic == 'list' and domain != '':
+        # "domain" is a misnomer in list mode, should be 'list'
+        # we want to load a list of sites from AWCY data
+        # and generate a report
+        print('%s%s.json' % (AWCY_DATA_URLPREFIX, domain))
+        req = requests.get('%s%s.json' % (AWCY_DATA_URLPREFIX, domain))
+        listdata = req.json()
+        report = generate_site_diff_report(listdata['data'], g.cur_1)
+        return jsonify(**report)
     if is_number(domain):
         # we're looking up information about a test data set
         recent_datasets = [domain]
