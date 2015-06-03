@@ -1,0 +1,159 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Compat-entomology screenshots</title>
+<style type="text/css">
+table{border:1px solid blue;border-collapse: collapse;width: 100%}
+th,td{border:1px solid black;border-collapse: collapse;}
+td div{position: relative;}
+img{border: 1px solid black}
+td div code{display: block;background: #fff; opacity: 0.7;position: absolute; bottom: 0; white-space: pre-wrap; text-align: left;}
+table caption{background: #000;color: #fff}
+th{text-align: left;}
+</style>
+</head>
+<body>
+<form>Site hostname(s): <textarea name="site"></textarea><input type="button" value="Look up"><br>Compare <select name="mode"><option>By UA</option><option>By engine</option></select></form>
+<div id="output"></div>
+<script>
+var entomology_url = 'http://compatentomology.com.paas.allizom.org/data/';
+var out_div = document.getElementById('output');
+
+document.forms[0].elements['mode'].onchange = document.forms[0].elements[1].onclick = function(){
+        var sites = document.forms[0].elements['site'].value.split(/\n/g);
+        var mode = document.forms[0].elements['mode'].value;
+        out_div.innerHTML = '';
+        for(var i = 0; i < sites.length; i++){
+            sortAndCompareData(sites[i], mode);
+        }
+}
+
+
+function sortAndCompareData(site, mode){
+    if(!site)return;
+    var x = new XMLHttpRequest();
+    x.open('GET', entomology_url + site);
+    x.responseType = 'json';
+    x.onload = function(){
+        var elms = [];
+        var matrix = {engine:[], ua:[]};
+        var dataSetsByRow = {};
+        matrix.x = mode === 'By UA' ? 'ua' : 'engine';
+        matrix.y = mode !== 'By UA' ? 'ua' : 'engine';
+        var response = x.response || JSON.parse(x.responseText);
+        if(response.recent_screenshots){
+            for(var i=0, ua, img, ss; ss = response.recent_screenshots[i]; i++){
+                if(matrix.ua.indexOf(ss.ua)==-1){
+                    matrix.ua.push(ss.ua);
+                }
+                if(matrix.engine.indexOf(ss.engine)==-1){
+                    matrix.engine.push(ss.engine);
+                }
+                // We also keep track of what data sets are used
+                // to enable comparisons
+                var rowcount = matrix[matrix.y].indexOf(ss[matrix.y]);
+                arProp(dataSetsByRow, rowcount).push(ss.data_set);
+                img = document.createElement('img');
+                img.src = ss.file;
+                ua = byID(response.uastrings, ss.ua);
+                img.title = ss.engine + ' ' + ua.human_desc + '\n' + ua.ua;
+                elms.push({img:img, ua:ss.ua, engine:ss.engine, x:matrix[matrix.x].indexOf(ss[matrix.x]), y:matrix[matrix.y].indexOf(ss[matrix.y]), data_set:ss.data_set});
+            }
+            var table = document.createElement('table');
+            table.appendChild(document.createElement('caption')).appendChild(document.createTextNode(site));
+            var tbody = table.appendChild(document.createElement('tbody'));
+            var tr = tbody.appendChild(document.createElement('tr')), td;
+            // Adding TH cells to describe X axis values
+            // First one empty TD (above the Y-axis header column)
+            tr.appendChild(document.createElement('td'));
+            matrix[matrix.x].forEach(function(type){
+                var typetxt = type, title='';
+                if(/^\d+$/.test(type) && matrix.x === 'ua'){
+                    typetxt = byID(response.uastrings, type).human_desc;
+                    title = byID(response.uastrings, type).ua;
+                }
+                tr.appendChild(document.createElement('th')).appendChild(document.createTextNode(typetxt));
+                tr.lastChild.title = title;
+            });
+            // Now we add the rows..
+            var rowcount = -1, colcount;
+            matrix[matrix.y].forEach(function(type){
+                rowcount++;
+                colcount = -1;
+                var typetxt = type, title='';
+                tr = tbody.appendChild(document.createElement('tr'));
+                if(/^\d+$/.test(type) && matrix.y === 'ua'){
+                    typetxt = byID(response.uastrings, type).human_desc;
+                    title = byID(response.uastrings, type).ua;
+                }
+                tr.appendChild(document.createElement('th')).appendChild(document.createTextNode(typetxt));
+                tr.lastChild.title = title;
+                matrix[matrix.x].forEach(function(){
+                    colcount++;
+                    td = tr.appendChild(document.createElement('td'));
+                    // find the image with coords rowcount, colcount
+                    elms.forEach(function(obj){
+                        if(obj.x === colcount && obj.y === rowcount){
+                            td.appendChild(document.createElement('div'));
+                            td.firstChild.appendChild(obj.img);
+                            //td.firstChild.appendChild(document.createElement('code')).appendChild(document.createTextNode(obj.img.title));
+                            if(dataSetsByRow[obj.y]){
+                                var diffs = compareDatasets(response, dataSetsByRow[obj.y], obj.data_set)
+                                if(diffs && diffs.length){
+                                    td.appendChild(document.createElement('pre')).appendChild(document.createTextNode(diffs.join('\n')));
+                                }
+                            }
+                        }
+                    });
+                });
+            });
+            out_div.appendChild(table);
+
+        }
+    }
+    x.send();
+}
+
+function compareDatasets(response, sets, this_id){
+    if(sets.length<2)return; // no comparisons to make
+    var thisSet = byID(response.recent_other_problems, this_id, 'data_set'), thatSet;
+    var differences = [];
+    for(var i = 0; i < sets.length; i++){
+        if(sets[i] === this_id)continue;
+        thatSet = byID(response.recent_other_problems, sets[i], 'data_set');
+        for(var prop in thatSet){
+            if(prop === 'id' || prop === 'data_set' || prop === 'ua' || prop === 'engine' || prop === 'other_plugin_data')continue;
+            if(thatSet[prop] !== null && thisSet[prop] !== null && typeof(thisSet[prop]) !== 'object'){
+                if(thatSet[prop] !== thisSet[prop]){
+                    differences.push(prop + ': ' + thisSet[prop] + ' vs ' + thatSet[prop] + ' for ' + byID(response.uastrings, thatSet.ua).human_desc + ' ' + thatSet.engine);
+                }
+            }
+        }
+        // slight flaw that hostname is under other_plugin_data..to be fixed!
+        if (thisSet.other_plugin_data && thisSet.other_plugin_data.hostname){
+            if(thisSet.other_plugin_data.hostname !== thatSet.other_plugin_data.hostname){
+                differences.push('hostname: ' + thisSet.other_plugin_data.hostname + ' vs ' + thatSet.other_plugin_data.hostname +' for ' + byID(response.uastrings, thatSet.ua).human_desc + ' ' + thatSet.engine);
+            }
+        };
+    }
+    return differences;
+}
+
+function byID(arrHaystack, idNeedle, idProperty){
+    var ua;
+    idProperty = idProperty || 'id';
+    for(var j = 0; j < arrHaystack.length; j++){
+        if(arrHaystack[j][idProperty] == idNeedle){
+            ua = arrHaystack[j];
+            break
+        }
+    }
+    return ua;
+}
+function arProp(obj, name){
+    if(!(name in obj)){
+        obj[name] = [];
+    }
+    return obj[name];
+
+}
+</script>
+</body>
+</html>
