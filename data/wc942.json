@@ -1,0 +1,7 @@
+{
+    "hostname": "uniqlo.com",
+    "field_list":[
+        {"table":"test_data", "field":"hasViewportMeta", "pass_value":1},
+        {"table":"test_data", "field":"mobileLinkOrScriptUrl", "pass_value":1}
+    ]
+}
