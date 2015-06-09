@@ -48,12 +48,21 @@ def cors_friendly(f):
  /screenshots/domain.tld - JSON data (list of screenshots w/UA, meta data)
  /screenshot/domain.tld/filename.png -
     screenshot (maps to /files/screenshots/domain.tld/filename.png)
-  (should be handled with --static-map ..)
-/list/awcy_list_shortname
+  (should be handled with --static-map ..)'
+
+/bug/bug_id - Regression result report for given bug
+
+/list/awcy_list_shortname - gives a "diff" view for all sites on AWCY list (#TODO: add more tables that test_data)
+
+/diff/domain.tld - gets results from different UA types, printes out differences only (#TODO)
+
+/time/domain.tld - gives evolution over time - diffs per UA type during last 6 months or so (#TODO)
+
  MAYBE
  /contacts/domain.tld
  /comments/domain.tld
  - or merge them into the /data/domain.tld info?
+
 
 To ADD data:
 POST /data/domain.tld
@@ -129,6 +138,44 @@ def dataviewer(topic, domain):
         listdata = req.json()
         report = generate_site_diff_report(listdata['data'], g.cur_1)
         return jsonify(**report)
+    if topic == 'bug' and re.search('^(moz|wc)\d+$', domain):
+        bug_id = domain
+        # import pdb
+        # pdb.set_trace()
+        # We're looking for regression results for given bug
+        # Two possible sources: regression_results table
+        # OR if we have JSON data linking bug to a specific
+        # table field, that table. We want to output lists of
+        # [{date, result, ua, engine, url, hostname, screenshot, data_set?}]
+        results = {bug_id:[]}
+        used_uas = set([])
+        used_datasets = set([])
+        query_to_object('SELECT date,result,screenshot,data_set,site,ua,engine FROM regression_results WHERE bug_id = "%s" LIMIT 10' % bug_id, results, bug_id)
+        bug_data_file = os.path.join('data', '%s.json' % bug_id )
+        if os.path.exists(bug_data_file):
+            f = open(bug_data_file, 'r')
+            bug_data = json.load(f)
+            f.close()
+            domain = normalize_domain(bug_data['hostname'])
+            domain_id = get_existing_domain_id(domain, False)
+            # We now have an array of fields considered relevant for this bug
+            # we look up the last x values from those fields..
+            if domain_id:
+                for field_details in bug_data['field_list']:
+                    query_to_object('SELECT data_set, ua, engine, %s  FROM %s WHERE site = %i LIMIT 10 ' % (field_details['field'], field_details['table'], domain_id), results, "%s.%s" % (field_details['table'],field_details['field']))
+            # We need "supplementary" data: UA strings, screenshot URLs.. Will see..
+            for category in results:
+                for result in results[category]:
+                    if 'data_set' in result:
+                        used_datasets.add(result['data_set'])
+                    if 'ua' in result:
+                        used_uas.add(result['ua'])
+            if used_datasets:
+                query_to_object('SELECT * FROM testdata_sets WHERE id IN (%s)' % (', '.join(str(s) for s in used_datasets)), results, 'datasets' )
+            if used_uas:
+                query_to_object('SELECT * FROM uastrings WHERE id IN (%s)' % (', '.join(str(s) for s in used_uas)), results, 'uastrings' )
+        return jsonify(**results)
+
     if is_number(domain):
         # we're looking up information about a test data set
         recent_datasets = [domain]
@@ -154,16 +201,16 @@ def dataviewer(topic, domain):
         if len(recent_datasets):
             query_to_object('SELECT * FROM screenshots WHERE data_set IN (%s) ORDER BY id DESC LIMIT 4' %
                             json.dumps(recent_datasets)[1:-1],
-                            output, 'recent_screenshots', screenshot_url)
+                            output, 'screenshots', screenshot_url)
             query_to_object('SELECT * FROM css_problems WHERE data_set IN (%s) ORDER BY id DESC LIMIT 25' %
                             json.dumps(recent_datasets)[1:-1],
-                            output, 'recent_css_problems')
+                            output, 'css_problems')
             query_to_object('SELECT * FROM js_problems WHERE data_set IN (%s) ORDER BY id DESC LIMIT 25' %
                             json.dumps(recent_datasets)[1:-1],
-                            output, 'recent_js_problems')
+                            output, 'js_problems')
             query_to_object('SELECT * FROM test_data WHERE data_set IN (%s) ORDER BY id DESC LIMIT 25' %
                             json.dumps(recent_datasets)[1:-1],
-                            output, 'recent_other_problems')
+                            output, 'test_data')
             query_to_object('SELECT * FROM redirects WHERE data_set IN (%s) ORDER BY id DESC LIMIT 25' %
                             json.dumps(recent_datasets)[1:-1],
                             output, 'redirects')
