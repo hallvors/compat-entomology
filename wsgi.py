@@ -129,14 +129,19 @@ def nothing():
 @cors_friendly
 def dataviewer(topic, domain):
     recent_datasets = []
-    if topic == 'list' and domain != '':
-        # "domain" is a misnomer in list mode, should be 'list'
-        # we want to load a list of sites from AWCY data
-        # and generate a report
-        print('%s%s.json' % (AWCY_DATA_URLPREFIX, domain))
-        req = requests.get('%s%s.json' % (AWCY_DATA_URLPREFIX, domain))
-        listdata = req.json()
-        report = generate_site_diff_report(listdata['data'], g.cur_1)
+    if (topic == 'list' or topic == 'diff') and domain != '':
+        if topic == 'list':
+            # "domain" is a misnomer in list mode, should be 'list'
+            # we want to load a list of sites from AWCY data
+            # and generate a report
+            req = requests.get('%s%s.json' % (AWCY_DATA_URLPREFIX, domain))
+            listdata = req.json()['data']
+        else:
+            # domain is the domain we want to diff..
+            listdata = [domain]
+            import pdb
+            pdb.set_trace()
+        report = generate_site_diff_report(listdata, g.cur_1)
         return jsonify(**report)
     if topic == 'bug' and re.search('^(moz|wc)\d+$', domain):
         bug_id = domain
