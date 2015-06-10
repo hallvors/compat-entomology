@@ -139,8 +139,6 @@ def dataviewer(topic, domain):
         else:
             # domain is the domain we want to diff..
             listdata = [domain]
-            import pdb
-            pdb.set_trace()
         report = generate_site_diff_report(listdata, g.cur_1)
         return jsonify(**report)
     if topic == 'bug' and re.search('^(moz|wc)\d+$', domain):
@@ -153,8 +151,8 @@ def dataviewer(topic, domain):
         # table field, that table. We want to output lists of
         # [{date, result, ua, engine, url, hostname, screenshot, data_set?}]
         results = {bug_id:[]}
-        used_uas = set([])
-        used_datasets = set([])
+        used_uas = set()
+        used_datasets = set()
         query_to_object('SELECT date,result,screenshot,data_set,site,ua,engine FROM regression_results WHERE bug_id = "%s" LIMIT 10' % bug_id, results, bug_id)
         bug_data_file = os.path.join('data', '%s.json' % bug_id )
         if os.path.exists(bug_data_file):
@@ -223,14 +221,14 @@ def dataviewer(topic, domain):
                             json.dumps(recent_datasets)[1:-1],
                             output, 'regression_results')
             # We also need a list of the UA strings used in these data sets..
-            all_ua_ids = set([])
-            for row in output['recent_screenshots']:
+            all_ua_ids = set()
+            for row in output['screenshots']:
                 all_ua_ids.add(row['ua'])
-            for row in output['recent_other_problems']:
+            for row in output['test_data']:
                 all_ua_ids.add(row['ua'])
-            for row in output['recent_css_problems']:
+            for row in output['css_problems']:
                 all_ua_ids.add(row['ua'])
-            for row in output['recent_js_problems']:
+            for row in output['js_problems']:
                 all_ua_ids.add(row['ua'])
             for row in output['redirects']:
                 all_ua_ids.add(row['ua'])
