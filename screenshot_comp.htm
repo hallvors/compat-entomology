@@ -38,8 +38,8 @@ function sortAndCompareData(site, mode){
         matrix.x = mode === 'By UA' ? 'ua' : 'engine';
         matrix.y = mode !== 'By UA' ? 'ua' : 'engine';
         var response = x.response || JSON.parse(x.responseText);
-        if(response.recent_screenshots){
-            for(var i=0, ua, img, ss; ss = response.recent_screenshots[i]; i++){
+        if(response.screenshots){
+            for(var i=0, ua, img, ss; ss = response.screenshots[i]; i++){
                 if(matrix.ua.indexOf(ss.ua)==-1){
                     matrix.ua.push(ss.ua);
                 }
@@ -113,11 +113,11 @@ function sortAndCompareData(site, mode){
 
 function compareDatasets(response, sets, this_id){
     if(sets.length<2)return; // no comparisons to make
-    var thisSet = byID(response.recent_other_problems, this_id, 'data_set'), thatSet;
+    var thisSet = byID(response.test_data, this_id, 'data_set'), thatSet;
     var differences = [];
     for(var i = 0; i < sets.length; i++){
         if(sets[i] === this_id)continue;
-        thatSet = byID(response.recent_other_problems, sets[i], 'data_set');
+        thatSet = byID(response.test_data, sets[i], 'data_set');
         for(var prop in thatSet){
             if(prop === 'id' || prop === 'data_set' || prop === 'ua' || prop === 'engine' || prop === 'other_plugin_data')continue;
             if(thatSet[prop] !== null && thisSet[prop] !== null && typeof(thisSet[prop]) !== 'object'){
