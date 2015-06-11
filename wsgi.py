@@ -165,7 +165,7 @@ def dataviewer(topic, domain):
             # we look up the last x values from those fields..
             if domain_id:
                 for field_details in bug_data['field_list']:
-                    query_to_object('SELECT data_set, ua, engine, %s  FROM %s WHERE site = %i LIMIT 10 ' % (field_details['field'], field_details['table'], domain_id), results, "%s.%s" % (field_details['table'],field_details['field']))
+                    query_to_object('SELECT data_set, ua, engine, %s  FROM %s WHERE site = %s LIMIT 10 ' % (field_details['field'], field_details['table'], domain_id), results, "%s.%s" % (field_details['table'],field_details['field']))
             # We need "supplementary" data: UA strings, screenshot URLs.. Will see..
             for category in results:
                 for result in results[category]:
@@ -307,27 +307,26 @@ def datasaver(topic, domain):
                     obj_to_table(insert_data, 'test_data', cur_2)
 
                 # Fill tables.. Now "css_problems"
-                if 'css_problems' in post_data[uastring][engine]:
-                    the_query = 'INSERT INTO css_problems (data_set, ua, engine, file, selector, property, value) VALUES (%s, %s, "%s", %%(file)s, %%(selector)s, %%(property)s, %%(value)s)' % (
-                        dataset_id, uastring_id, engine)
+                if 'css_problems' in post_data[uastring][engine] and post_data[uastring][engine]['css_problems']:
+                    the_query = 'INSERT INTO css_problems (data_set, ua, engine, site, file, selector, property, value) VALUES (%s, %s, "%s", %s, %%(file)s, %%(selector)s, %%(property)s, %%(value)s)' % (
+                        dataset_id, uastring_id, engine, domain_id)
                     cur_2.executemany(
                         the_query, post_data[uastring][engine]['css_problems'])
                 # Fill tables.. Now "js_problems"
-                if 'js_problems' in post_data[uastring][engine]:
-                    the_query = 'INSERT INTO js_problems (data_set, ua, engine, stack, message) VALUES (%s, %s, "%s", %%(stack)s, %%(message)s)' % (
-                        dataset_id, uastring_id, engine)
+                if 'js_problems' in post_data[uastring][engine] and post_data[uastring][engine]['js_problems']:
+                    the_query = 'INSERT INTO js_problems (data_set, ua, engine, site, stack, message) VALUES (%s, %s, "%s", %s, %%(stack)s, %%(message)s)' % (
+                        dataset_id, uastring_id, engine, domain_id)
                     cur_2.executemany(
                         the_query, post_data[uastring][engine]['js_problems'])
                 # Fill tables.. Now "redirects"
-                if 'redirects' in post_data[uastring][engine]:
-                    the_query = 'INSERT INTO redirects (data_set, ua, engine, urls) VALUES (%s, %s, "%s", %%s)' % (
-                        dataset_id, uastring_id, engine)
-                    cur_2.execute(
-                        the_query, '\t'.join(post_data[uastring][engine]['redirects']))
+                if 'redirects' in post_data[uastring][engine] and post_data[uastring][engine]['redirects']:
+                    the_query = 'INSERT INTO redirects (data_set, ua, engine, site, urls) VALUES (%s, %s, "%s", %s, "%s")' % (
+                        dataset_id, uastring_id, engine, domain_id, '\t'.join(post_data[uastring][engine]['redirects']))
+                    cur_2.execute(the_query)
                 # Fill tables.. Now "regression_results"
                 # "regression_results": "site","ua","engine","bug_id","result","screenshot"
                 # pdb.set_trace()
-                if 'regression_results' in post_data[uastring][engine]:
+                if 'regression_results' in post_data[uastring][engine] and post_data[uastring][engine]['regression_results']:
                     for reg_res in post_data[uastring][engine]['regression_results']:
                         reg_res['data_set'] = dataset_id
                         reg_res['ua'] = uastring_id
@@ -340,7 +339,7 @@ def datasaver(topic, domain):
                             reg_res, 'regression_results', cur_2)
                         regression_insert_ids[insert_id] = the_screenshot
     except Exception, e:
-        return ('Name of site not valid? Processing it causes an error: %s'
+        return ('Problem with form data? Processing it causes an error: %s'
                 % e, 500)
 
     domain_id = get_existing_domain_id(domain)
@@ -398,20 +397,20 @@ def datasaver(topic, domain):
 
                     # Fill tables.. Now "css_problems"
                     if 'css_problems' in post_data[uastring][engine]:
-                        the_query = 'INSERT INTO css_problems (data_set, ua, engine, file, selector, property, value) VALUES (%s, %s, "%s", %%(file)s, %%(selector)s, %%(property)s, %%(value)s)' % (
-                            dataset_id, uastring_id, engine)
+                        the_query = 'INSERT INTO css_problems (data_set, ua, engine, site, file, selector, property, value) VALUES (%s, %s, "%s", %s, %%(file)s, %%(selector)s, %%(property)s, %%(value)s)' % (
+                            dataset_id, uastring_id, engine, domain_id)
                         cur_2.executemany(
                             the_query, post_data[uastring][engine]['css_problems'])
                     # Fill tables.. Now "js_problems"
                     if 'js_problems' in post_data[uastring][engine]:
-                        the_query = 'INSERT INTO js_problems (data_set, ua, engine, stack, message) VALUES (%s, %s, "%s", %%(stack)s, %%(message)s)' % (
-                            dataset_id, uastring_id, engine)
+                        the_query = 'INSERT INTO js_problems (data_set, ua, engine, site, stack, message) VALUES (%s, %s, "%s", %s, %%(stack)s, %%(message)s)' % (
+                            dataset_id, uastring_id, engine, domain_id)
                         cur_2.executemany(
                             the_query, post_data[uastring][engine]['js_problems'])
                     # Fill tables.. Now "redirects"
                     if 'redirects' in post_data[uastring][engine]:
-                        the_query = 'INSERT INTO redirects (data_set, ua, engine, urls) VALUES (%s, %s, "%s", %%s)' % (
-                            dataset_id, uastring_id, engine)
+                        the_query = 'INSERT INTO redirects (data_set, ua, engine, site, urls) VALUES (%s, %s, "%s", %i, "%%s")' % (
+                            dataset_id, uastring_id, engine, site)
                         cur_2.executemany(
                             the_query, '\t'.join(post_data[uastring][engine]['redirects']))
                     # Fill tables.. Now "regression_results"
@@ -599,4 +598,4 @@ def describe_ua(uastr):
 if __name__ == '__main__':
     port = int(os.getenv('PORT', '8000'))
     print('Serving on port %s' % port)
-    app.run('localhost', port=port)
+    app.run('0.0.0.0', port=port)
