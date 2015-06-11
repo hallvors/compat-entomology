@@ -6,7 +6,7 @@ import tempfile
 import requests
 from flask import Flask, request, g, jsonify, make_response
 from dbconf import database_connect
-from utils import get_existing_domain_id
+from utils import get_existing_domain_id, query_to_object
 from report import generate_site_diff_report
 app = Flask(__name__)
 
@@ -139,6 +139,8 @@ def dataviewer(topic, domain):
         else:
             # domain is the domain we want to diff..
             listdata = [domain]
+        import pdb
+        pdb.set_trace()
         report = generate_site_diff_report(listdata, g.cur_1)
         return jsonify(**report)
     if topic == 'bug' and re.search('^(moz|wc)\d+$', domain):
@@ -531,21 +533,7 @@ def get_existing_ua_id_or_insert(datastr):
     return datastr_id
 
 
-def query_to_object(query, obj, prop, massage_method=None):
-    try:
-        g.cur_1.execute(query)
-    except Exception, e:
-        print(e)
-    if prop not in obj:
-        obj[prop] = []
-    for i in range(g.cur_1.rowcount):
-        if massage_method:
-            obj[prop].append(massage_method(g.cur_1.fetchone()))
-        else:
-            obj[prop].append(g.cur_1.fetchone())
-
 # Some methods to "massage" data from the database for presentation
-
 
 def screenshot_url(row):
     url_parts = request.url.split('/')
