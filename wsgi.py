@@ -117,6 +117,15 @@ POST /contacts/domain.tld
 POST /comments/domain.tld =>
 post field names map directly to table names:
 tables.contacts etc lists the fields
+
+POST /watch/domain.tld
+bug_id=, table=test_data/css_problems/js_problems, field=, data=, ua_type=, match_means_fail=0|1
+field can be for example 'hostname', 'hasViewportMeta' - basically what to look for in table
+
+So, a POST might be
+bug_id=wc1234&table=test_data&field=hasViewportMeta&data=1&ua_type=gecko&match_means_fail=0  => check if test_data.hasViewportMeta is 1, if true it's a pass
+
+
 """
 
 
