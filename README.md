@@ -19,3 +19,13 @@ dbinit.py sets up a number of MySQL tables:
 * uastrings - helper table listing the UA strings we've seen results reported for. 
 
 See dbdesc.json for details.
+
+## Local testing and developmen
+
+To run this project locally, install the requirements (see requirements.txt). You need a MySQL or Maria DB instance. Then:
+
+1. Set an environment variable named DATABASE_URL to a string 
+```
+SET DATABASE_URL=mysql://username:password@localhost:3306/database_name
+```
+2. run ```python wsgi.py```
