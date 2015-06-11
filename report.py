@@ -37,13 +37,14 @@ def generate_site_diff_report(sites, cur_1):
             # families)
             for ua_ids in [('wkdata', wkuas), ('gkdata', gkuas)]:
                 for table in ['test_data', 'redirects', 'js_problems', 'css_problems']:
-                    query_to_object('SELECT * FROM %s WHERE site = "%s" AND ua IN (%s) ORDER BY id DESC LIMIT 1' % (table, site_id, json.dumps(ua_ids[1])[1:-1]), data[ua_ids[0]], table)
+                    limit = 1 if table == 'test_data' else 5
+                    query_to_object('SELECT DISTINCT * FROM %s WHERE site = "%s" AND ua IN (%s) ORDER BY id DESC LIMIT %i' % (table, site_id, json.dumps(ua_ids[1])[1:-1], limit), data[ua_ids[0]], table)
                     if not data[ua_ids[0]][table]:
                         lacks_data.append({site: '(Insufficient data for %s, no %s results)' % (table, ua_ids[0])})
 
             # Compare test results (test_data table). Output site and short
             # explanation if different
-            if data['gkdata']['test_data']:
+            if data['gkdata']['test_data'] and data['wkdata']['test_data']:
                 for prop in data['gkdata']['test_data'][0]:
                     if prop in ['id', 'data_set', 'ua', 'ua_type', 'engine', 'other_plugin_data', 'site']:
                         # skip metadata fields..
@@ -55,7 +56,7 @@ def generate_site_diff_report(sites, cur_1):
                     if data['gkdata']['test_data'][0][prop] != data['wkdata']['test_data'][0][prop]:
                         if site not in differences:
                             differences[site] = {'test_data':[]}
-                        differences[site]['test_data'].append('%s is %s for gecko-UA, %s for other UA (rows: %s,%s)' % (prop,data['gkdata']['test_data'][0][prop],data['wkdata']['test_data'][0][prop],data['gkdata']['test_data'][0]['id'],data['wkdata']['test_data'][0]['id']))
+                        differences[site]['test_data'].append({prop:{'gecko':data['gkdata']['test_data'][0][prop],'webkit':data['wkdata']['test_data'][0][prop]}})
             # TODO - can we make any comparisons here at all?
             # For CSS - not sure..
             for table in log_missing_data_tables:

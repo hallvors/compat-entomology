@@ -139,8 +139,6 @@ def dataviewer(topic, domain):
         else:
             # domain is the domain we want to diff..
             listdata = [domain]
-        import pdb
-        pdb.set_trace()
         report = generate_site_diff_report(listdata, g.cur_1)
         return jsonify(**report)
     if topic == 'bug' and re.search('^(moz|wc)\d+$', domain):
