@@ -16,6 +16,7 @@ table_queries = [
     #    'DROP TABLE IF EXISTS regression_results',
     #    'DROP TABLE IF EXISTS redirects',
     #    'DROP TABLE IF EXISTS testdata_sets',
+    #    'DROP TABLE IF EXISTS bug_watch',
     # set up the 'domains' table - our master list of sites.
     'CREATE TABLE IF NOT EXISTS domains (id INT AUTO_INCREMENT, domain VARCHAR(253) CHARACTER SET utf8 COLLATE utf8_bin, PRIMARY KEY(id), UNIQUE(domain))',
     # set up helper table: UA strings
@@ -51,7 +52,8 @@ table_queries = [
     # a table for redirects..
     'CREATE TABLE IF NOT EXISTS redirects (id INT AUTO_INCREMENT, data_set INT, ua INT, ua_type TINYTEXT, engine TINYTEXT, site INT, urls TEXT, final_url TEXT, PRIMARY KEY(id))',
     # a meta table for testdata sets, helps track data that belongs together..
-    'CREATE TABLE IF NOT EXISTS testdata_sets (id INT AUTO_INCREMENT, site INT, url TEXT, date TIMESTAMP, PRIMARY KEY(id))'
+    'CREATE TABLE IF NOT EXISTS testdata_sets (id INT AUTO_INCREMENT, site INT, url TEXT, date TIMESTAMP, PRIMARY KEY(id))',
+    'CREATE TABLE IF NOT EXISTS watch (id INT AUTO_INCREMENT, bug_id TINYTEXT, `table` TINYTEXT, `field` TINYTEXT, `data` TEXT, ua_type TINYTEXT, match_means_fail TINYINT(1), date TIMESTAMP, PRIMARY KEY(id))'
 ]
 
 for query in table_queries:
@@ -62,28 +64,28 @@ for query in table_queries:
 # this is a good place to add them. NO ATTEMPTS will be made to check if these queries
 # are necessary, so they should EITHER throw an error or be harmless if run more than once
 alter_queries = [
-    'ALTER TABLE css_problems ADD COLUMN site INT AFTER data_set',
-    'UPDATE css_problems SET site = (SELECT site FROM testdata_sets WHERE testdata_sets.id = css_problems.data_set)',
-    'ALTER TABLE js_problems ADD COLUMN site INT AFTER data_set',
-    'UPDATE js_problems SET site = (SELECT site FROM testdata_sets WHERE testdata_sets.id = js_problems.data_set)',
-    'ALTER TABLE regression_results ADD COLUMN site INT AFTER data_set',
-    'UPDATE regression_results SET site = (SELECT site FROM testdata_sets WHERE testdata_sets.id = regression_results.data_set)',
-    'ALTER TABLE redirects ADD COLUMN site INT AFTER data_set',
-    'UPDATE redirects SET site = (SELECT site FROM testdata_sets WHERE testdata_sets.id = redirects.data_set)',
-    'ALTER TABLE regression_results ADD COLUMN ua_type TINYTEXT AFTER ua',
-    'UPDATE regression_results SET ua_type = CASE WHEN regression_results.ua IN (SELECT id FROM uastrings WHERE ua LIKE "%WebKit%") THEN "webkit" ELSE "gecko" END',
-    'ALTER TABLE test_data ADD COLUMN ua_type TINYTEXT AFTER ua',
-    'UPDATE test_data SET ua_type = CASE WHEN test_data.ua IN (SELECT id FROM uastrings WHERE ua LIKE "%WebKit%") THEN "webkit" ELSE "gecko" END',
-    'ALTER TABLE screenshots ADD COLUMN ua_type TINYTEXT AFTER ua',
-    'UPDATE screenshots SET ua_type = CASE WHEN screenshots.ua IN (SELECT id FROM uastrings WHERE ua LIKE "%WebKit%") THEN "webkit" ELSE "gecko" END',
-    'ALTER TABLE css_problems ADD COLUMN ua_type TINYTEXT AFTER ua',
-    'UPDATE css_problems SET ua_type = CASE WHEN css_problems.ua IN (SELECT id FROM uastrings WHERE ua LIKE "%WebKit%") THEN "webkit" ELSE "gecko" END',
-    'ALTER TABLE js_problems ADD COLUMN hostname TINYTEXT AFTER engine',
-    'UPDATE js_problems SET ua_type = CASE WHEN js_problems.ua IN (SELECT id FROM uastrings WHERE ua LIKE "%WebKit%") THEN "webkit" ELSE "gecko" END',
-    'ALTER TABLE redirects ADD COLUMN ua_type TINYTEXT AFTER ua',
-    'UPDATE redirects SET ua_type = CASE WHEN redirects.ua IN (SELECT id FROM uastrings WHERE ua LIKE "%WebKit%") THEN "webkit" ELSE "gecko" END',
-    'ALTER TABLE css_problems MODIFY value TEXT',
-    'ALTER TABLE js_problems MODIFY message TEXT'
+    #'ALTER TABLE css_problems ADD COLUMN site INT AFTER data_set',
+    #'UPDATE css_problems SET site = (SELECT site FROM testdata_sets WHERE testdata_sets.id = css_problems.data_set)',
+    #'ALTER TABLE js_problems ADD COLUMN site INT AFTER data_set',
+    #'UPDATE js_problems SET site = (SELECT site FROM testdata_sets WHERE testdata_sets.id = js_problems.data_set)',
+    #'ALTER TABLE regression_results ADD COLUMN site INT AFTER data_set',
+    #'UPDATE regression_results SET site = (SELECT site FROM testdata_sets WHERE testdata_sets.id = regression_results.data_set)',
+    #'ALTER TABLE redirects ADD COLUMN site INT AFTER data_set',
+    #'UPDATE redirects SET site = (SELECT site FROM testdata_sets WHERE testdata_sets.id = redirects.data_set)',
+    #'ALTER TABLE regression_results ADD COLUMN ua_type TINYTEXT AFTER ua',
+    #'UPDATE regression_results SET ua_type = CASE WHEN regression_results.ua IN (SELECT id FROM uastrings WHERE ua LIKE "%WebKit%") THEN "webkit" ELSE "gecko" END',
+    #'ALTER TABLE test_data ADD COLUMN ua_type TINYTEXT AFTER ua',
+    #'UPDATE test_data SET ua_type = CASE WHEN test_data.ua IN (SELECT id FROM uastrings WHERE ua LIKE "%WebKit%") THEN "webkit" ELSE "gecko" END',
+    #'ALTER TABLE screenshots ADD COLUMN ua_type TINYTEXT AFTER ua',
+    #'UPDATE screenshots SET ua_type = CASE WHEN screenshots.ua IN (SELECT id FROM uastrings WHERE ua LIKE "%WebKit%") THEN "webkit" ELSE "gecko" END',
+    #'ALTER TABLE css_problems ADD COLUMN ua_type TINYTEXT AFTER ua',
+    #'UPDATE css_problems SET ua_type = CASE WHEN css_problems.ua IN (SELECT id FROM uastrings WHERE ua LIKE "%WebKit%") THEN "webkit" ELSE "gecko" END',
+    #'ALTER TABLE js_problems ADD COLUMN hostname TINYTEXT AFTER engine',
+    #'UPDATE js_problems SET ua_type = CASE WHEN js_problems.ua IN (SELECT id FROM uastrings WHERE ua LIKE "%WebKit%") THEN "webkit" ELSE "gecko" END',
+    #'ALTER TABLE redirects ADD COLUMN ua_type TINYTEXT AFTER ua',
+    #'UPDATE redirects SET ua_type = CASE WHEN redirects.ua IN (SELECT id FROM uastrings WHERE ua LIKE "%WebKit%") THEN "webkit" ELSE "gecko" END',
+    #'ALTER TABLE css_problems MODIFY value TEXT',
+    #'ALTER TABLE js_problems MODIFY message TEXT'
 ]
 for query in alter_queries:
     try:

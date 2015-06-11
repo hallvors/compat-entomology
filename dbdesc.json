@@ -57,6 +57,16 @@
     "gplus", 
     "gplus_source"
   ], 
+  "watch": [
+    "id", 
+    "bug_id", 
+    "table", 
+    "field", 
+    "data", 
+    "ua_type", 
+    "match_means_fail", 
+    "date"
+  ], 
   "test_data": [
     "id", 
     "data_set", 
