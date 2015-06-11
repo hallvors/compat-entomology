@@ -59,6 +59,7 @@
   ], 
   "watch": [
     "id", 
+    "site", 
     "bug_id", 
     "table", 
     "field", 

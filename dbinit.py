@@ -53,7 +53,7 @@ table_queries = [
     'CREATE TABLE IF NOT EXISTS redirects (id INT AUTO_INCREMENT, data_set INT, ua INT, ua_type TINYTEXT, engine TINYTEXT, site INT, urls TEXT, final_url TEXT, PRIMARY KEY(id))',
     # a meta table for testdata sets, helps track data that belongs together..
     'CREATE TABLE IF NOT EXISTS testdata_sets (id INT AUTO_INCREMENT, site INT, url TEXT, date TIMESTAMP, PRIMARY KEY(id))',
-    'CREATE TABLE IF NOT EXISTS watch (id INT AUTO_INCREMENT, bug_id TINYTEXT, `table` TINYTEXT, `field` TINYTEXT, `data` TEXT, ua_type TINYTEXT, match_means_fail TINYINT(1), date TIMESTAMP, PRIMARY KEY(id))'
+    'CREATE TABLE IF NOT EXISTS watch (id INT AUTO_INCREMENT, site INT, bug_id TINYTEXT, `table` TINYTEXT, `field` TINYTEXT, `data` TEXT, ua_type TINYTEXT, match_means_fail TINYINT(1), date TIMESTAMP, PRIMARY KEY(id))'
 ]
 
 for query in table_queries:
@@ -86,6 +86,7 @@ alter_queries = [
     #'UPDATE redirects SET ua_type = CASE WHEN redirects.ua IN (SELECT id FROM uastrings WHERE ua LIKE "%WebKit%") THEN "webkit" ELSE "gecko" END',
     #'ALTER TABLE css_problems MODIFY value TEXT',
     #'ALTER TABLE js_problems MODIFY message TEXT'
+    'ALTER TABLE watch ADD COLUMN site INT AFTER id',
 ]
 for query in alter_queries:
     try:
