@@ -28,14 +28,14 @@ table_queries = [
     # these can be submitted from slimerjstester.js for example
     # they might include screenshot(s) (if so the screenshot value
     # here will refer to an insert_id in the screenshots table)
-    'CREATE TABLE IF NOT EXISTS regression_results (id INT AUTO_INCREMENT, data_set INT, site INT, ua INT, engine TINYTEXT, date TIMESTAMP, bug_id TINYTEXT, result TEXT, screenshot INT, PRIMARY KEY(id))',
+    'CREATE TABLE IF NOT EXISTS regression_results (id INT AUTO_INCREMENT, data_set INT, site INT, ua INT, ua_type TINYTEXT, engine TINYTEXT, date TIMESTAMP, bug_id TINYTEXT, result TEXT, screenshot INT, PRIMARY KEY(id))',
     # test data table
     # TO EVALUATE: is it better to add fields for each plugin?
     # Yes, with the drawback that adding plugins becomes harder.
     # perhaps a mixed solution where every key-value that has a key
     # in the table is inserted, rest is JSON stringified
     # and added to plugin_data.
-    'CREATE TABLE IF NOT EXISTS test_data (id INT AUTO_INCREMENT, data_set INT, site INT, ua INT, engine TINYTEXT, hostname TINYTEXT, state TINYINT(1), failing_because TEXT, hasHandheldFriendlyMeta TINYINT(1), hasViewportMeta TINYINT(1), hasMobileOptimizedMeta TINYINT(1), mobileLinkOrScriptUrl TINYINT(1), hasVideoTags TINYINT(1), pageWidthFitsScreen TINYINT(1), hasHtmlOrBodyMobileClass TINYINT(1), `iscroll` TINYINT(1), `link-prerender` TINYINT(1), `m3u8-links` TINYINT(1), `m3u8-videos` TINYINT(1), `mobify-check` TINYINT(1), `modernizr-at-media` TINYINT(1), `old-brightcove` TINYINT(1), `sencha-touch` TINYINT(1), `window-orientation-usage` TINYINT(1), `wptouch-check` TINYINT(1), other_plugin_data TEXT, PRIMARY KEY(id))',
+    'CREATE TABLE IF NOT EXISTS test_data (id INT AUTO_INCREMENT, data_set INT, site INT, ua INT, ua_type TINYTEXT, engine TINYTEXT, hostname TINYTEXT, state TINYINT(1), failing_because TEXT, hasHandheldFriendlyMeta TINYINT(1), hasViewportMeta TINYINT(1), hasMobileOptimizedMeta TINYINT(1), mobileLinkOrScriptUrl TINYINT(1), hasVideoTags TINYINT(1), pageWidthFitsScreen TINYINT(1), hasHtmlOrBodyMobileClass TINYINT(1), `iscroll` TINYINT(1), `link-prerender` TINYINT(1), `m3u8-links` TINYINT(1), `m3u8-videos` TINYINT(1), `mobify-check` TINYINT(1), `modernizr-at-media` TINYINT(1), `old-brightcove` TINYINT(1), `sencha-touch` TINYINT(1), `window-orientation-usage` TINYINT(1), `wptouch-check` TINYINT(1), other_plugin_data TEXT, PRIMARY KEY(id))',
     # a table of contact points - filled through automated discovery
     # of contact forms,
     # social media accounts etc
@@ -43,19 +43,53 @@ table_queries = [
     # addresses found on GitHub or LinkedIN..
     'CREATE TABLE IF NOT EXISTS contacts (id INT AUTO_INCREMENT, site INT, form TINYTEXT, form_source TINYTEXT, email TINYTEXT, email_source TINYTEXT, twitter TINYTEXT, twitter_source TINYTEXT, facebook TINYTEXT, facebook_source TINYTEXT, linkedin TINYTEXT, linkedin_source TINYTEXT, gplus TINYTEXT, gplus_source TINYTEXT, PRIMARY KEY(id))',
     # a table of screenshots..
-    'CREATE TABLE IF NOT EXISTS screenshots (id INT AUTO_INCREMENT, data_set INT, ua INT, engine TINYTEXT, file TINYTEXT, PRIMARY KEY(id))',
+    'CREATE TABLE IF NOT EXISTS screenshots (id INT AUTO_INCREMENT, data_set INT, ua INT, ua_type TINYTEXT, engine TINYTEXT, file TINYTEXT, PRIMARY KEY(id))',
     # a table for CSS problems..
-    'CREATE TABLE IF NOT EXISTS css_problems (id INT AUTO_INCREMENT, data_set INT, ua INT, engine TINYTEXT, file TEXT, selector TINYTEXT, property TINYTEXT, value TINYTEXT, PRIMARY KEY(id))',
+    'CREATE TABLE IF NOT EXISTS css_problems (id INT AUTO_INCREMENT, data_set INT, site INT, ua INT, ua_type TINYTEXT, engine TINYTEXT, file TEXT, selector TINYTEXT, property TINYTEXT, value TEXT, PRIMARY KEY(id))',
     # a table for JS problems..
-    'CREATE TABLE IF NOT EXISTS js_problems (id INT AUTO_INCREMENT, data_set INT, ua INT, engine TINYTEXT, stack TEXT, message TINYTEXT, PRIMARY KEY(id))',
+    'CREATE TABLE IF NOT EXISTS js_problems (id INT AUTO_INCREMENT, data_set INT, site INT, ua INT, ua_type TINYTEXT, engine TINYTEXT, stack TEXT, message TEXT, PRIMARY KEY(id))',
     # a table for redirects..
-    'CREATE TABLE IF NOT EXISTS redirects (id INT AUTO_INCREMENT, data_set INT, ua INT, engine TINYTEXT, urls TEXT, final_url TEXT, PRIMARY KEY(id))',
+    'CREATE TABLE IF NOT EXISTS redirects (id INT AUTO_INCREMENT, data_set INT, ua INT, ua_type TINYTEXT, engine TINYTEXT, site INT, urls TEXT, final_url TEXT, PRIMARY KEY(id))',
     # a meta table for testdata sets, helps track data that belongs together..
     'CREATE TABLE IF NOT EXISTS testdata_sets (id INT AUTO_INCREMENT, site INT, url TEXT, date TIMESTAMP, PRIMARY KEY(id))'
 ]
 
 for query in table_queries:
     cur_1.execute(query)
+
+# so, even though I'm still in testing/dev mode, we have some data that's useful
+# to test with - if there are updates that are good to do but not need nuking the DB
+# this is a good place to add them. NO ATTEMPTS will be made to check if these queries
+# are necessary, so they should EITHER throw an error or be harmless if run more than once
+alter_queries = [
+    'ALTER TABLE css_problems ADD COLUMN site INT AFTER data_set',
+    'UPDATE css_problems SET site = (SELECT site FROM testdata_sets WHERE testdata_sets.id = css_problems.data_set)',
+    'ALTER TABLE js_problems ADD COLUMN site INT AFTER data_set',
+    'UPDATE js_problems SET site = (SELECT site FROM testdata_sets WHERE testdata_sets.id = js_problems.data_set)',
+    'ALTER TABLE regression_results ADD COLUMN site INT AFTER data_set',
+    'UPDATE regression_results SET site = (SELECT site FROM testdata_sets WHERE testdata_sets.id = regression_results.data_set)',
+    'ALTER TABLE redirects ADD COLUMN site INT AFTER data_set',
+    'UPDATE redirects SET site = (SELECT site FROM testdata_sets WHERE testdata_sets.id = redirects.data_set)',
+    'ALTER TABLE regression_results ADD COLUMN ua_type TINYTEXT AFTER ua',
+    'UPDATE regression_results SET ua_type = CASE WHEN regression_results.ua IN (SELECT id FROM uastrings WHERE ua LIKE "%WebKit%") THEN "webkit" ELSE "gecko" END',
+    'ALTER TABLE test_data ADD COLUMN ua_type TINYTEXT AFTER ua',
+    'UPDATE test_data SET ua_type = CASE WHEN test_data.ua IN (SELECT id FROM uastrings WHERE ua LIKE "%WebKit%") THEN "webkit" ELSE "gecko" END',
+    'ALTER TABLE screenshots ADD COLUMN ua_type TINYTEXT AFTER ua',
+    'UPDATE screenshots SET ua_type = CASE WHEN screenshots.ua IN (SELECT id FROM uastrings WHERE ua LIKE "%WebKit%") THEN "webkit" ELSE "gecko" END',
+    'ALTER TABLE css_problems ADD COLUMN ua_type TINYTEXT AFTER ua',
+    'UPDATE css_problems SET ua_type = CASE WHEN css_problems.ua IN (SELECT id FROM uastrings WHERE ua LIKE "%WebKit%") THEN "webkit" ELSE "gecko" END',
+    'ALTER TABLE js_problems ADD COLUMN hostname TINYTEXT AFTER engine',
+    'UPDATE js_problems SET ua_type = CASE WHEN js_problems.ua IN (SELECT id FROM uastrings WHERE ua LIKE "%WebKit%") THEN "webkit" ELSE "gecko" END',
+    'ALTER TABLE redirects ADD COLUMN ua_type TINYTEXT AFTER ua',
+    'UPDATE redirects SET ua_type = CASE WHEN redirects.ua IN (SELECT id FROM uastrings WHERE ua LIKE "%WebKit%") THEN "webkit" ELSE "gecko" END',
+    'ALTER TABLE css_problems MODIFY value TEXT',
+    'ALTER TABLE js_problems MODIFY message TEXT'
+]
+for query in alter_queries:
+    try:
+        cur_1.execute(query)
+    except:
+        pass
 
 dbdesc = {}
 tables = []
