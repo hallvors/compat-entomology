@@ -6,7 +6,7 @@ import tempfile
 import requests
 from flask import Flask, request, g, jsonify, make_response
 from dbconf import database_connect
-from utils import get_existing_domain_id, query_to_object
+from utils import get_existing_domain_id, query_to_object, describe_ua
 from report import generate_site_diff_report
 app = Flask(__name__)
 
@@ -562,37 +562,6 @@ def normalize_domain(domain):
         tmp = '%s.%s' % (tmp.domain, tmp.suffix)
     return tmp
 
-
-def describe_ua(uastr):
-    # This will never be perfect. Just so you know I know that..
-    name = ''
-    platform = ''
-    version = ''
-    if 'Firefox' in uastr and 'like Gecko' not in uastr:
-        name = 'Firefox'
-    elif 'Chrome' in uastr:
-        name = 'Chrome'
-    elif 'MSIE' in uastr > -1 or 'Trident' in uastr:
-        name = 'IE'
-    elif 'Opera' in uastr:
-        name = 'Opera'
-    elif 'Safari' in uastr:
-        name = 'Safari'
-
-    if 'Mobile' in uastr:
-        if 'Android' in uastr:
-            platform = 'Android'
-        else:
-            platform = 'OS' if name == 'Firefox' else 'Mobile'
-    elif 'Tablet' in uastr:
-        platform = 'Tablet'
-    else:
-        platform = 'Desktop'
-    # version
-    v = re.search(r"(Firefox\/|Chrome\/|rv:|Version\/)(\d+)", uastr)
-    if v:
-        version = v.groups()[1]
-    return "%s%s%s" % (name, platform, version)
 
 
 if __name__ == '__main__':
