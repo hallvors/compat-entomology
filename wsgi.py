@@ -300,7 +300,6 @@ def datasaver(topic, domain):
         elif topic == 'data' and 'data' in request.form and request.form['data']:
             post_data = json.loads(request.form['data'])
             initial_url = request.form['initial_url']
-            final_url = request.form['final_url']
             # If topic is "data" we have a POST form field called data
             # which is actually a chunk of JSON. It requires some parsing and
             # massage to throw the data into the right table(s)..
@@ -336,7 +335,8 @@ def datasaver(topic, domain):
                             else:
                                 other_plugin_data[prop] = post_data[
                                     uastring][engine]['plugin_results'][prop]
-                        insert_data['other_plugin_data'] = json.dumps(
+                        if other_plugin_data:
+                            insert_data['other_plugin_data'] = json.dumps(
                             other_plugin_data)
 
                         # get property names from insert_data
@@ -355,10 +355,14 @@ def datasaver(topic, domain):
                         cur_2.executemany(
                             the_query, post_data[uastring][engine]['js_problems'])
                     # Fill tables.. Now "redirects"
+
                     if 'redirects' in post_data[uastring][engine] and post_data[uastring][engine]['redirects']:
-                        the_query = 'INSERT INTO redirects (data_set, ua, ua_type, engine, site, urls, final_url) VALUES (%s, %s, "%s", "%s", %s, "%s", %%s)' % (
-                            dataset_id, uastring_id, describe_ua(uastring), engine, domain_id, '\t'.join(post_data[uastring][engine]['redirects']))
-                        cur_2.execute(the_query, final_url)
+                        # We combine redirected URLs with a TAB
+                        # If any elements are None, the join() throws - hence the list comprehension
+                        tab_sep_urls = '\t'.join([url for url in post_data[uastring][engine]['redirects'] if url])
+                        the_query = 'INSERT INTO redirects (data_set, ua, ua_type, engine, site, urls) VALUES (%s, %s, "%s", "%s", %s, "%s")' % (
+                            dataset_id, uastring_id, describe_ua(uastring), engine, domain_id, tab_sep_urls)
+                        cur_2.execute(the_query)
                     # Fill tables.. Now "regression_results"
                     # "regression_results": "site","ua","engine","bug_id","result","screenshot"
                     # pdb.set_trace()
