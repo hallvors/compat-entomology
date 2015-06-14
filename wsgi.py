@@ -6,7 +6,7 @@ import tempfile
 import requests
 from flask import Flask, request, g, jsonify, make_response
 from dbconf import database_connect
-from utils import get_existing_domain_id, query_to_object, describe_ua
+from utils import get_existing_domain_id, query_to_object, describe_ua, normalize_domain
 from report import generate_site_diff_report
 app = Flask(__name__)
 
@@ -39,6 +39,14 @@ def cors_friendly(f):
         resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp
     return decorated_function
+
+def cors_friendly2(f):
+    """This decorator adds CORS headers"""
+    def decorated_function2(*args, **kwargs):
+        resp = make_response(f(*args, **kwargs))
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        return resp
+    return decorated_function2
 
 
 """
@@ -135,8 +143,8 @@ def nothing():
     return 'Nothing to see here (what are you looking for?)'
 
 
-@cors_friendly
 @app.route('/<topic>/<domain>', methods=['GET'])
+@cors_friendly
 def dataviewer(topic, domain):
     recent_datasets = []
     if (topic == 'list' or topic == 'diff') and domain != '':
@@ -259,8 +267,8 @@ def testform():
     return '<html><form method="post" action="http://localhost:8000/data/example.com" enctype="multipart/form-data">Data JSON:<br><textarea name="data"></textarea><br>File desc JSON:<br><textarea name="file_desc"></textarea><br>Screenshots:<br><input type="file" name="screenshot"><br><input type="file" name="screenshot"><br><input type="submit">'
 
 
-@cors_friendly
 @app.route('/<topic>/<domain>', methods=['POST'])
+@cors_friendly2
 def datasaver(topic, domain):
     con = g.con
     cur_2 = g.cur_2
@@ -488,6 +496,7 @@ def screenshot_url(row):
     url_parts = request.url.split('/')
     # replace the 'topic' with the word 'screenshot'
     url_parts[3] = 'screenshot'
+    url_parts[4] = normalize_domain(url_parts[4])
     row['file'] = '%s/%s' % ('/'.join(url_parts), row['file'])
     return row
 
@@ -503,18 +512,6 @@ def sanitize(dirty_html):
     dirty_html = dirty_html.replace('>', '&gt;')
     dirty_html = dirty_html.replace('"', '&quot;')
     return dirty_html
-
-
-def normalize_domain(domain):
-    tmp = tldextract.extract('http://%s' % domain)
-    # we remove "meaningless-ish" prefixes only
-    if not tmp.subdomain in ['www', '']:
-        tmp = '%s.%s.%s' % (tmp.subdomain, tmp.domain, tmp.suffix)
-    else:
-        tmp = '%s.%s' % (tmp.domain, tmp.suffix)
-    return tmp
-
-
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', '8000'))

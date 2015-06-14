@@ -1,5 +1,5 @@
 from flask import Flask, request, g, jsonify, make_response
-
+import tldextract
 
 def get_existing_domain_id(datastr, insert_if_not_found=True):
     datastr_id = None
@@ -59,3 +59,11 @@ def describe_ua(uastr):
     #    version = v.groups()[1]
     return "%s%s%s" % (name, platform, version)
 
+def normalize_domain(domain):
+    tmp = tldextract.extract('http://%s' % domain)
+    # we remove "meaningless-ish" prefixes only
+    if not tmp.subdomain in ['www', '']:
+        tmp = '%s.%s.%s' % (tmp.subdomain, tmp.domain, tmp.suffix)
+    else:
+        tmp = '%s.%s' % (tmp.domain, tmp.suffix)
+    return tmp
