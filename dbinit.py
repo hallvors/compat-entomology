@@ -1,6 +1,6 @@
 import json
 from dbconf import database_connect
-
+from utils import describe_ua
 con, cur_1, cur_2 = database_connect()
 
 table_queries = [
@@ -46,7 +46,7 @@ table_queries = [
     # a table of screenshots..
     'CREATE TABLE IF NOT EXISTS screenshots (id INT AUTO_INCREMENT, data_set INT, ua INT, ua_type TINYTEXT, engine TINYTEXT, file TINYTEXT, PRIMARY KEY(id))',
     # a table for CSS problems..
-    'CREATE TABLE IF NOT EXISTS css_problems (id INT AUTO_INCREMENT, data_set INT, site INT, ua INT, ua_type TINYTEXT, engine TINYTEXT, file TEXT, selector TINYTEXT, property TINYTEXT, value TEXT, PRIMARY KEY(id))',
+    'CREATE TABLE IF NOT EXISTS css_problems (id INT AUTO_INCREMENT, data_set INT, site INT, ua INT, ua_type TINYTEXT, engine TINYTEXT, file TEXT, selector TEXT, property TINYTEXT, value TEXT, PRIMARY KEY(id))',
     # a table for JS problems..
     'CREATE TABLE IF NOT EXISTS js_problems (id INT AUTO_INCREMENT, data_set INT, site INT, ua INT, ua_type TINYTEXT, engine TINYTEXT, stack TEXT, message TEXT, PRIMARY KEY(id))',
     # a table for redirects..
@@ -86,14 +86,29 @@ alter_queries = [
     #'UPDATE redirects SET ua_type = CASE WHEN redirects.ua IN (SELECT id FROM uastrings WHERE ua LIKE "%WebKit%") THEN "webkit" ELSE "gecko" END',
     #'ALTER TABLE css_problems MODIFY value TEXT',
     #'ALTER TABLE js_problems MODIFY message TEXT'
-    'ALTER TABLE watch ADD COLUMN site INT AFTER id',
+    #'ALTER TABLE watch ADD COLUMN site INT AFTER id',
+    #'ALTER TABLE css_problems MODIFY selector TEXT',
+    #'ALTER TABLE js_problems ADD COLUMN ua_type TINYTEXT AFTER ua'
 ]
+
+# update ua_type
+#cur_1.execute('SELECT * FROM uastrings')
+#uadetails=[]
+#for i in range(cur_1.rowcount):
+#    row = cur_1.fetchone()
+#    uadetails.append({'id': row['id'], 'ua_type': describe_ua(row['ua'])})
+#for uadetail in uadetails:
+#    for table in ['test_data', 'redirects', 'js_problems', 'css_problems', 'regression_results', 'screenshots']:
+#        alter_queries.append('UPDATE %s SET ua_type = "%s" WHERE ua IN (%s)' % (table, uadetail['ua_type'], uadetail['id']))
+
+
 for query in alter_queries:
     try:
+        print(query)
         cur_1.execute(query)
-    except:
-        pass
-
+    except Exception,e:
+        print(e)
+    con.commit()
 dbdesc = {}
 tables = []
 cur_1.execute('SHOW TABLES')
