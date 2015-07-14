@@ -20,9 +20,14 @@ dbinit.py sets up a number of MySQL tables:
 
 See dbdesc.json for details.
 
-## Local testing and developmen
+## Local testing and development
 
-To run this project locally, install the requirements (see requirements.txt). You need a MySQL or Maria DB instance. Then:
+To run this project locally, install the requirements (see requirements.txt). The simplest way to install the requirements is to run this from a command line:
+```
+pip install -r requirements.txt
+```
+
+You need a MySQL or Maria DB instance. Then:
 
 1. Set an environment variable named DATABASE_URL to a string 
 ```
