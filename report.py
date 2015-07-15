@@ -14,8 +14,7 @@ def generate_site_diff_report_old(sites, cur_1):
     cur_1.execute('SELECT * FROM uastrings')
     wkuas = []
     gkuas=[]
-    for i in range(cur_1.rowcount):
-        row = cur_1.fetchone()
+    for row in cur_1:
         if 'WebKit' in row['ua']:
             wkuas.append(row['id'])
         else:
@@ -43,9 +42,9 @@ def generate_site_diff_report_old(sites, cur_1):
             # different UAs from different browser
             # families)
             for ua_ids in [('wkdata', wkuas), ('gkdata', gkuas)]:
-                query_to_object('SELECT DISTINCT * FROM test_data WHERE site = "%s" AND ua IN (%s) ORDER BY id DESC LIMIT 1' % (site_id, json.dumps(ua_ids[1])[1:-1]), data[ua_ids[0]], 'test_data')
+                query_to_object('SELECT DISTINCT * FROM test_data WHERE site = ?1 AND ua IN (?2) ORDER BY id DESC LIMIT 1', (site_id, json.dumps(ua_ids[1])[1:-1]), data[ua_ids[0]], 'test_data')
                 for table in ['redirects', 'js_problems']:
-                    query_to_object(table_queries[table] % (site_id, json.dumps(ua_ids[1])[1:-1]), data[ua_ids[0]], table)
+                    query_to_object(table_queries[table], (site_id, json.dumps(ua_ids[1])[1:-1]), data[ua_ids[0]], table)
 
                     if not data[ua_ids[0]][table]:
                         lacks_data.append({site: '(Insufficient data for %s, no %s results)' % (table, ua_ids[0])})
@@ -102,9 +101,8 @@ def generate_site_diff_report(sites, cur_1):
     ua_types = []
     # Create a list of UA types we have test results for this site from during the last three months
     # maybe we can optimize this?
-    cur_1.execute('SELECT DISTINCT test_data.ua_type FROM test_data, testdata_sets WHERE test_data.site IN (%s) AND test_data.data_set = testdata_sets.id AND testdata_sets.date > date_sub(now(), interval 3 month)' % ', '.join([str(item['id']) for item in site_ids]))
-    for i in range(cur_1.rowcount):
-        the_type = cur_1.fetchone()
+    cur_1.execute('SELECT DISTINCT test_data.ua_type FROM test_data, testdata_sets WHERE test_data.site IN (?1) AND test_data.data_set = testdata_sets.id AND testdata_sets.date > date_sub(now(), interval 3 month)', (', '.join([str(item['id']) for item in site_ids])))
+    for the_type in cur_1:
         if the_type:
             ua_types.append(the_type['ua_type'])
 
@@ -116,13 +114,14 @@ def generate_site_diff_report(sites, cur_1):
         tmp_results = {}
         for ua_type in ua_types:
             print("%s %s" % (this_site['domain'],ua_type))
-            query_to_object('SELECT DISTINCT * FROM test_data WHERE site = "%s" AND ua_type LIKE "%s" ORDER BY id DESC LIMIT 1' % (this_site['id'], ua_type), tmp_results, ua_type)
+            query_to_object('SELECT DISTINCT * FROM test_data WHERE site = ?1 AND ua_type LIKE ?2 ORDER BY id DESC LIMIT 1', (this_site['id'], ua_type), tmp_results, ua_type)
             # we want to have redirects available for comparison too..
-            cur_1.execute('SELECT DISTINCT redirects.urls, redirects.final_url, redirects.ua_type, testdata_sets.date FROM redirects, testdata_sets WHERE redirects.site = "%s" AND redirects.ua_type LIKE "%s" AND redirects.data_set = testdata_sets.id AND testdata_sets.date > date_sub(now(), interval 3 month) ORDER BY redirects.id DESC LIMIT 1' % (this_site['id'],ua_type))
-            if cur_1.rowcount == 1:
+            cur_1.execute('SELECT DISTINCT redirects.urls, redirects.final_url, redirects.ua_type, testdata_sets.date FROM redirects, testdata_sets WHERE redirects.site = ?1 AND redirects.ua_type LIKE ?2 AND redirects.data_set = testdata_sets.id AND testdata_sets.date > date_sub(now(), interval 3 month) ORDER BY redirects.id DESC LIMIT 1', (this_site['id'],ua_type))
+            the_data = cur_1.fetchall()
+            if len(the_data) == 1:
                 if not tmp_results[ua_type]:
                     tmp_results[ua_type] = [{}]
-                tmp_results[ua_type][0]['redirect_urls'] = cur_1.fetchone()['urls']
+                tmp_results[ua_type][0]['redirect_urls'] = the_data[0]['urls']
 
             if not tmp_results[ua_type]:
                 # there was no data.. Forget about this ua type to avoid problems in iteration below.

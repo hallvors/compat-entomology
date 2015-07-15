@@ -173,12 +173,12 @@ def dataviewer(topic, domain):
         used_datasets = set()
         # First we look up data saved from regression tests run
         # by our URL players (if we have any..)
-        query_to_object('SELECT date,result,screenshot,data_set,site,ua,engine FROM regression_results WHERE bug_id = "%s" LIMIT 10' % bug_id, results, bug_id)
+        query_to_object('SELECT date,result,screenshot,data_set,site,ua,engine FROM regression_results WHERE bug_id = ? LIMIT 10', (bug_id,), results, bug_id)
         # Then check the "watch" table for stats we should keep an eye on
-        query_to_object('SELECT * FROM watch WHERE bug_id LIKE "%s"' % bug_id, results, 'watch')
+        query_to_object('SELECT * FROM watch WHERE bug_id LIKE ?', (bug_id,), results, 'watch')
         for the_watch in results['watch']:
             # ..and we might as well include the current status
-            query_to_object('SELECT data_set, ua, engine, %s  FROM %s WHERE site = %s AND ua_type LIKE "%s" ORDER BY id DESC LIMIT 1 ' % (the_watch['field'], the_watch['table'], the_watch['site'], the_watch['ua_type']), results, "%s.%s" % (the_watch['table'],the_watch['field']))
+            query_to_object('SELECT data_set, ua, engine, ?1  FROM ?2 WHERE site = ?3 AND ua_type LIKE ?4 ORDER BY id DESC LIMIT 1 ', (the_watch['field'], the_watch['table'], the_watch['site'], the_watch['ua_type']), results, "%s.%s" % (the_watch['table'],the_watch['field']))
             # TODO: it would be interesting to also check if there's any recent
             # test result with the *opposite* value, like from another UA. This helps
             # tell if a result is still worth watching. But we can also use a /diff/site
@@ -191,9 +191,9 @@ def dataviewer(topic, domain):
                 if 'ua' in result:
                     used_uas.add(result['ua'])
         if used_datasets:
-            query_to_object('SELECT * FROM testdata_sets WHERE id IN (%s)' % (', '.join(str(s) for s in used_datasets)), results, 'datasets' )
+            query_to_object('SELECT * FROM testdata_sets WHERE id IN (?)', (', '.join([str(s) for s in used_datasets]),), results, 'datasets' )
         if used_uas:
-            query_to_object('SELECT * FROM uastrings WHERE id IN (%s)' % (', '.join(str(s) for s in used_uas)), results, 'uastrings' )
+            query_to_object('SELECT * FROM uastrings WHERE id IN (?)', (', '.join([str(s) for s in used_uas]),), results, 'uastrings' )
         return jsonify(**results)
 
     if is_number(domain):
@@ -212,30 +212,31 @@ def dataviewer(topic, domain):
             return ('No data found for this site', 404)
         output = {'domain': domain, 'id': domain_id}
         query_to_object(
-            'SELECT * FROM testdata_sets WHERE site = %s ORDER BY id DESC LIMIT 4' % domain_id, output, 'datasets')
+            'SELECT * FROM testdata_sets WHERE site = ? ORDER BY id DESC LIMIT 4', (domain_id,), output, 'datasets')
     # we need a list of datasets to select related screenshots, CSS problems,
     # JS problems and test data..
         for the_set in output['datasets']:
             recent_datasets.append(the_set['id'])
     if topic == 'data':
         if len(recent_datasets):
-            query_to_object('SELECT * FROM screenshots WHERE data_set IN (%s) ORDER BY id DESC LIMIT 4' %
-                            json.dumps(recent_datasets)[1:-1],
+            these_datasets = (json.dumps(recent_datasets)[1:-1],)
+            query_to_object('SELECT * FROM screenshots WHERE data_set IN (?) ORDER BY id DESC LIMIT 4' ,
+                            these_datasets,
                             output, 'screenshots', screenshot_url)
-            query_to_object('SELECT * FROM css_problems WHERE data_set IN (%s) ORDER BY id DESC LIMIT 25' %
-                            json.dumps(recent_datasets)[1:-1],
+            query_to_object('SELECT * FROM css_problems WHERE data_set IN (?) ORDER BY id DESC LIMIT 25',
+                            these_datasets,
                             output, 'css_problems')
-            query_to_object('SELECT * FROM js_problems WHERE data_set IN (%s) ORDER BY id DESC LIMIT 25' %
-                            json.dumps(recent_datasets)[1:-1],
+            query_to_object('SELECT * FROM js_problems WHERE data_set IN (?) ORDER BY id DESC LIMIT 25',
+                            these_datasets,
                             output, 'js_problems')
-            query_to_object('SELECT * FROM test_data WHERE data_set IN (%s) ORDER BY id DESC LIMIT 25' %
-                            json.dumps(recent_datasets)[1:-1],
+            query_to_object('SELECT * FROM test_data WHERE data_set IN (?) ORDER BY id DESC LIMIT 25',
+                            these_datasets,
                             output, 'test_data')
-            query_to_object('SELECT * FROM redirects WHERE data_set IN (%s) ORDER BY id DESC LIMIT 25' %
-                            json.dumps(recent_datasets)[1:-1],
+            query_to_object('SELECT * FROM redirects WHERE data_set IN (?) ORDER BY id DESC LIMIT 25',
+                            these_datasets,
                             output, 'redirects')
-            query_to_object('SELECT * FROM regression_results WHERE data_set IN (%s) ORDER BY id DESC LIMIT 25' %
-                            json.dumps(recent_datasets)[1:-1],
+            query_to_object('SELECT * FROM regression_results WHERE data_set IN (?) ORDER BY id DESC LIMIT 25',
+                            these_datasets,
                             output, 'regression_results')
             # We also need a list of the UA strings used in these data sets..
             all_ua_ids = set()
@@ -251,14 +252,14 @@ def dataviewer(topic, domain):
                 all_ua_ids.add(row['ua'])
             for row in output['regression_results']:
                 all_ua_ids.add(row['ua'])
-            query_to_object('SELECT DISTINCT id, ua FROM uastrings WHERE id IN (%s) ORDER BY id ASC' % json.dumps(
-                list(all_ua_ids))[1:-1], output, 'uastrings', add_ua_desc)
+            query_to_object('SELECT DISTINCT id, ua FROM uastrings WHERE id IN (?) ORDER BY id ASC', (json.dumps(
+                list(all_ua_ids))[1:-1],), output, 'uastrings', add_ua_desc)
     elif topic == 'comments':
         query_to_object(
-            'SELECT * FROM comments WHERE site = %s LIMIT 15 ORDER BY id DESC' % domain_id, output, 'comments')
+            'SELECT * FROM comments WHERE site = ? LIMIT 15 ORDER BY id DESC', (domain_id,), output, 'comments')
     elif topic == 'contacts':
         query_to_object(
-            'SELECT * FROM contacts WHERE site = %s LIMIT 15 ORDER BY id DESC' % domain_id, output, 'contacts')
+            'SELECT * FROM contacts WHERE site = ? LIMIT 15 ORDER BY id DESC', (domain_id,), output, 'contacts')
     return jsonify(**output)
 
 
@@ -287,13 +288,12 @@ def datasaver(topic, domain):
     domain_id = get_existing_domain_id(domain) # this will add domain to DB if not already tracked
     # This list will be used to map regressions and screenshots
     regression_insert_ids = {}
-
     try:
         if topic == 'watch':
             # request.form should have 'bug_id', table, field, data, ua_type, match_means_fail=0|1, optionally ID
             if 'id' in request.form and request.form['id']:
                 # As of now, we don't 'edit' watches, we activate (insert) or de-activate (delete) them..
-                cur_2.execute('DELETE FROM watch WHERE id = %s', request.form['id'])
+                cur_2.execute('DELETE FROM watch WHERE id = ?1', (request.form['id'],))
                 # If we want 'edit'-type functionality, use this instead:
                 #the_query = 'UPDATE watch (ua_type, table, field, data) VALUES ("%%(ua_type)s", "%%(table)s", "%%(field)s", "%%(data)s",%%(match_means_fail)d) WHERE id = %s AND bug_id LIKE "%s"' % (request.form['id'], request.form['bug_id'])
                 con.commit()
@@ -315,13 +315,15 @@ def datasaver(topic, domain):
             # we register a "dataset id" for this submit by creating a row in the
             # testdata_sets table
             cur_2.execute(
-                'INSERT INTO testdata_sets (site, url) VALUES (%s, %s)', (domain_id, initial_url))
+                'INSERT INTO testdata_sets (site, url) VALUES (?1, ?2)', (domain_id, initial_url))
             con.commit()
             dataset_id = cur_2.lastrowid
             for uastring in post_data:
                 uastring_id = get_existing_ua_id_or_insert(uastring)
                 for engine in post_data[uastring]:
                     print('Now processing dataset %s' % dataset_id)
+                    if re.search('\W', engine):
+                        raise ValueError('invalid characters in given "engine" string')
                     # Fill tables.. Now "test_data"
                     insert_data = {
                         'data_set': dataset_id, 'site': domain_id, 'engine': engine, 'ua': uastring_id,
@@ -352,13 +354,14 @@ def datasaver(topic, domain):
 
                     # Fill tables.. Now "css_problems"
                     if 'css_problems' in post_data[uastring][engine] and post_data[uastring][engine]['css_problems']:
-                        the_query = 'INSERT INTO css_problems (data_set, ua, ua_type, engine, site, file, selector, property, value) VALUES (%s, %s, "%s", "%s", %s, %%(file)s, %%(selector)s, %%(property)s, %%(value)s)' % (
+                        # the values we use string interpolation for should all be safe at this point
+                        the_query = 'INSERT INTO css_problems (data_set, ua, ua_type, engine, site, file, selector, property, value) VALUES (%s, %s, "%s", "%s", %s, :file, :selector, :property, :value)' % (
                             dataset_id, uastring_id, describe_ua(uastring), engine, domain_id)
                         cur_2.executemany(
                             the_query, post_data[uastring][engine]['css_problems'])
                     # Fill tables.. Now "js_problems"
                     if 'js_problems' in post_data[uastring][engine] and post_data[uastring][engine]['js_problems']:
-                        the_query = 'INSERT INTO js_problems (data_set, ua, ua_type, engine, site, stack, message) VALUES (%s, %s, "%s", "%s", %s, %%(stack)s, %%(message)s)' % (
+                        the_query = 'INSERT INTO js_problems (data_set, ua, ua_type, engine, site, stack, message) VALUES (%s, %s, "%s", "%s", %s, :stack, :message)' % (
                             dataset_id, uastring_id, describe_ua(uastring), engine, domain_id)
                         cur_2.executemany(
                             the_query, post_data[uastring][engine]['js_problems'])
@@ -368,9 +371,8 @@ def datasaver(topic, domain):
                         # We combine redirected URLs with a TAB
                         # If any elements are None, the join() throws - hence the list comprehension
                         tab_sep_urls = '\t'.join([url for url in post_data[uastring][engine]['redirects'] if url])
-                        the_query = 'INSERT INTO redirects (data_set, ua, ua_type, engine, site, urls) VALUES (%s, %s, "%s", "%s", %s, "%s")' % (
-                            dataset_id, uastring_id, describe_ua(uastring), engine, domain_id, tab_sep_urls)
-                        cur_2.execute(the_query)
+                        cur_2.execute('INSERT INTO redirects (data_set, ua, ua_type, engine, site, urls) VALUES (?1, ?2, ?3, ?4, ?5, ?6)', (
+                            dataset_id, uastring_id, describe_ua(uastring), engine, domain_id, tab_sep_urls))
                     # Fill tables.. Now "regression_results"
                     # "regression_results": "site","ua","engine","bug_id","result","screenshot"
                     # pdb.set_trace()
@@ -442,8 +444,7 @@ def datasaver(topic, domain):
                     # update regression_results to set screenshot field
                     for this_reg_ins_id in regression_insert_ids.keys():
                         if regression_insert_ids[this_reg_ins_id] == file_obj.filename:
-                            cur_2.execute('UPDATE regression_results SET screenshot = %s WHERE id = %s' % (
-                                img_insert_id, this_reg_ins_id))
+                            cur_2.execute('UPDATE regression_results SET screenshot = ?1 WHERE id = ?2', (img_insert_id, this_reg_ins_id))
                 con.commit()
 
             else:
@@ -469,9 +470,13 @@ def filter_props(incoming_obj, prop_list, outgoing_obj={}, other_obj={}):
 
 
 def obj_to_table(insert_data, table, cur_2):
+    import pdb
+    pdb.set_trace()
     # get property names from insert_data
-    the_query = ('INSERT INTO %s (`' % table) + '`, `'.join(insert_data.keys()
-                                                            ) + '`) VALUES (%(' + (')s, %('.join(insert_data.keys())) + ')s)'
+    col_names = ', '.join(insert_data.keys())
+    col_placeholders = ':'+ ', :'.join(insert_data.keys())
+    the_query = 'INSERT INTO %s (%s) VALUES (%s)' % (table, col_names, col_placeholders)
+    insert_data[table] = table
     cur_2.execute(the_query, insert_data)
     return cur_2.lastrowid
 
@@ -479,12 +484,13 @@ def obj_to_table(insert_data, table, cur_2):
 # ??
 
 def get_existing_ua_id_or_insert(datastr):
-    g.cur_1.execute('SELECT id FROM uastrings WHERE ua LIKE %s',  (datastr,))
-    if g.cur_1.rowcount > 0:
-        row = g.cur_1.fetchone()
+    g.cur_1.execute('SELECT id FROM uastrings WHERE ua LIKE ?1',  (datastr,))
+    all_entries = g.cur_1.fetchall()
+    if len(all_entries) > 0:
+        row = all_entries[0]
         datastr_id = row['id']
     else:
-        g.cur_2.execute('INSERT INTO uastrings (ua) VALUES (%s)',  (datastr,))
+        g.cur_2.execute('INSERT INTO uastrings (ua) VALUES (?1)',  (datastr,))
         g.con.commit()
         datastr_id = g.cur_2.lastrowid
     return datastr_id
@@ -516,4 +522,4 @@ def sanitize(dirty_html):
 if __name__ == '__main__':
     port = int(os.getenv('PORT', '8000'))
     print('Serving on port %s' % port)
-    app.run('0.0.0.0', port=port)
+    app.run('0.0.0.0', port=port, debug=True)
