@@ -8,10 +8,10 @@
   "redirects": [
     "id", 
     "data_set", 
-    "site", 
     "ua", 
     "ua_type", 
     "engine", 
+    "site", 
     "urls", 
     "final_url"
   ], 
@@ -26,21 +26,6 @@
     "bug_id", 
     "result", 
     "screenshot"
-  ], 
-  "js_problems": [
-    "id", 
-    "data_set", 
-    "site", 
-    "ua", 
-    "ua_type", 
-    "engine", 
-    "hostname", 
-    "stack", 
-    "message"
-  ], 
-  "uastrings": [
-    "id", 
-    "ua"
   ], 
   "contacts": [
     "id", 
@@ -58,6 +43,20 @@
     "gplus", 
     "gplus_source"
   ], 
+  "uastrings": [
+    "id", 
+    "ua"
+  ], 
+  "js_problems": [
+    "id", 
+    "data_set", 
+    "site", 
+    "ua", 
+    "ua_type", 
+    "engine", 
+    "stack", 
+    "message"
+  ], 
   "watch": [
     "id", 
     "site", 
@@ -68,6 +67,28 @@
     "ua_type", 
     "match_means_fail", 
     "date"
+  ], 
+  "comments": [
+    "id", 
+    "site", 
+    "date", 
+    "handled", 
+    "type", 
+    "comment", 
+    "screenshot", 
+    "github_nick"
+  ], 
+  "css_problems": [
+    "id", 
+    "data_set", 
+    "site", 
+    "ua", 
+    "ua_type", 
+    "engine", 
+    "file", 
+    "selector", 
+    "property", 
+    "value"
   ], 
   "test_data": [
     "id", 
@@ -97,37 +118,6 @@
     "window-orientation-usage", 
     "wptouch-check", 
     "other_plugin_data"
-  ], 
-  "comments": [
-    "id", 
-    "site", 
-    "date", 
-    "handled", 
-    "type", 
-    "comment", 
-    "screenshot", 
-    "github_nick"
-  ], 
-  "css_problems": [
-    "id", 
-    "data_set", 
-    "site", 
-    "ua", 
-    "ua_type", 
-    "engine", 
-    "file", 
-    "selector", 
-    "property", 
-    "value"
-  ], 
-  "human_review": [
-    "id", 
-    "site", 
-    "ua", 
-    "date", 
-    "state", 
-    "type", 
-    "comment"
   ], 
   "domains": [
     "id", 
