@@ -18,42 +18,43 @@ table_queries = [
     #    'DROP TABLE IF EXISTS testdata_sets',
     #    'DROP TABLE IF EXISTS bug_watch',
     # set up the 'domains' table - our master list of sites.
-    'CREATE TABLE IF NOT EXISTS domains (id INT AUTO_INCREMENT, domain VARCHAR(253) CHARACTER SET utf8 COLLATE utf8_bin, PRIMARY KEY(id), UNIQUE(domain))',
+    'CREATE TABLE IF NOT EXISTS domains (id INTEGER PRIMARY KEY, domain VARCHAR(253), UNIQUE(domain))',
     # set up helper table: UA strings
-    'CREATE TABLE IF NOT EXISTS uastrings (id INT AUTO_INCREMENT, ua TEXT CHARACTER SET utf8 COLLATE utf8_bin, PRIMARY KEY(id))',
+    'CREATE TABLE IF NOT EXISTS uastrings (id INTEGER PRIMARY KEY, ua TEXT)',
     # set up table for human review results
     # TODO: hook into GitHub to be able to associate submitted comments with
     # GitHub user name..?
-    'CREATE TABLE IF NOT EXISTS comments (id INT AUTO_INCREMENT, site INT, date TIMESTAMP, handled TINYINT(1) DEFAULT 0, type ENUM("screenshot", "testing", "thumbsupdown"), comment TEXT, screenshot INT, github_nick TINYTEXT, PRIMARY KEY(id))',
+    # type: ENUM("screenshot", "testing", "thumbsupdown")
+    'CREATE TABLE IF NOT EXISTS comments (id INTEGER PRIMARY KEY, site INT, date TIMESTAMP, handled TINYINT(1) DEFAULT 0, type TEXT, comment TEXT, screenshot INT, github_nick TINYTEXT)',
     # regression tests - table for results
     # these can be submitted from slimerjstester.js for example
     # they might include screenshot(s) (if so the screenshot value
     # here will refer to an insert_id in the screenshots table)
-    'CREATE TABLE IF NOT EXISTS regression_results (id INT AUTO_INCREMENT, data_set INT, site INT, ua INT, ua_type TINYTEXT, engine TINYTEXT, date TIMESTAMP, bug_id TINYTEXT, result TEXT, screenshot INT, PRIMARY KEY(id))',
+    'CREATE TABLE IF NOT EXISTS regression_results (id INTEGER PRIMARY KEY, data_set INT, site INT, ua INT, ua_type TINYTEXT, engine TINYTEXT, date TIMESTAMP, bug_id TINYTEXT, result TEXT, screenshot INT)',
     # test data table
     # TO EVALUATE: is it better to add fields for each plugin?
     # Yes, with the drawback that adding plugins becomes harder.
     # perhaps a mixed solution where every key-value that has a key
     # in the table is inserted, rest is JSON stringified
     # and added to plugin_data.
-    'CREATE TABLE IF NOT EXISTS test_data (id INT AUTO_INCREMENT, data_set INT, site INT, ua INT, ua_type TINYTEXT, engine TINYTEXT, hostname TINYTEXT, state TINYINT(1), failing_because TEXT, hasHandheldFriendlyMeta TINYINT(1), hasViewportMeta TINYINT(1), hasMobileOptimizedMeta TINYINT(1), mobileLinkOrScriptUrl TINYINT(1), hasVideoTags TINYINT(1), pageWidthFitsScreen TINYINT(1), hasHtmlOrBodyMobileClass TINYINT(1), `iscroll` TINYINT(1), `link-prerender` TINYINT(1), `m3u8-links` TINYINT(1), `m3u8-videos` TINYINT(1), `mobify-check` TINYINT(1), `modernizr-at-media` TINYINT(1), `old-brightcove` TINYINT(1), `sencha-touch` TINYINT(1), `window-orientation-usage` TINYINT(1), `wptouch-check` TINYINT(1), other_plugin_data TEXT, PRIMARY KEY(id))',
+    'CREATE TABLE IF NOT EXISTS test_data (id INTEGER PRIMARY KEY, data_set INT, site INT, ua INT, ua_type TINYTEXT, engine TINYTEXT, hostname TINYTEXT, state TINYINT(1), failing_because TEXT, hasHandheldFriendlyMeta TINYINT(1), hasViewportMeta TINYINT(1), hasMobileOptimizedMeta TINYINT(1), mobileLinkOrScriptUrl TINYINT(1), hasVideoTags TINYINT(1), pageWidthFitsScreen TINYINT(1), hasHtmlOrBodyMobileClass TINYINT(1), `iscroll` TINYINT(1), `link-prerender` TINYINT(1), `m3u8-links` TINYINT(1), `m3u8-videos` TINYINT(1), `mobify-check` TINYINT(1), `modernizr-at-media` TINYINT(1), `old-brightcove` TINYINT(1), `sencha-touch` TINYINT(1), `window-orientation-usage` TINYINT(1), `wptouch-check` TINYINT(1), other_plugin_data TEXT)',
     # a table of contact points - filled through automated discovery
     # of contact forms,
     # social media accounts etc
     # Note: this is for "public" data only - not intended for dev E-mail
     # addresses found on GitHub or LinkedIN..
-    'CREATE TABLE IF NOT EXISTS contacts (id INT AUTO_INCREMENT, site INT, form TINYTEXT, form_source TINYTEXT, email TINYTEXT, email_source TINYTEXT, twitter TINYTEXT, twitter_source TINYTEXT, facebook TINYTEXT, facebook_source TINYTEXT, linkedin TINYTEXT, linkedin_source TINYTEXT, gplus TINYTEXT, gplus_source TINYTEXT, PRIMARY KEY(id))',
+    'CREATE TABLE IF NOT EXISTS contacts (id INTEGER PRIMARY KEY, site INT, form TINYTEXT, form_source TINYTEXT, email TINYTEXT, email_source TINYTEXT, twitter TINYTEXT, twitter_source TINYTEXT, facebook TINYTEXT, facebook_source TINYTEXT, linkedin TINYTEXT, linkedin_source TINYTEXT, gplus TINYTEXT, gplus_source TINYTEXT)',
     # a table of screenshots..
-    'CREATE TABLE IF NOT EXISTS screenshots (id INT AUTO_INCREMENT, data_set INT, ua INT, ua_type TINYTEXT, engine TINYTEXT, file TINYTEXT, PRIMARY KEY(id))',
+    'CREATE TABLE IF NOT EXISTS screenshots (id INTEGER PRIMARY KEY, data_set INT, ua INT, ua_type TINYTEXT, engine TINYTEXT, file TINYTEXT)',
     # a table for CSS problems..
-    'CREATE TABLE IF NOT EXISTS css_problems (id INT AUTO_INCREMENT, data_set INT, site INT, ua INT, ua_type TINYTEXT, engine TINYTEXT, file TEXT, selector TEXT, property TINYTEXT, value TEXT, PRIMARY KEY(id))',
+    'CREATE TABLE IF NOT EXISTS css_problems (id INTEGER PRIMARY KEY, data_set INT, site INT, ua INT, ua_type TINYTEXT, engine TINYTEXT, file TEXT, selector TEXT, property TINYTEXT, value TEXT)',
     # a table for JS problems..
-    'CREATE TABLE IF NOT EXISTS js_problems (id INT AUTO_INCREMENT, data_set INT, site INT, ua INT, ua_type TINYTEXT, engine TINYTEXT, stack TEXT, message TEXT, PRIMARY KEY(id))',
+    'CREATE TABLE IF NOT EXISTS js_problems (id INTEGER PRIMARY KEY, data_set INT, site INT, ua INT, ua_type TINYTEXT, engine TINYTEXT, stack TEXT, message TEXT)',
     # a table for redirects..
-    'CREATE TABLE IF NOT EXISTS redirects (id INT AUTO_INCREMENT, data_set INT, ua INT, ua_type TINYTEXT, engine TINYTEXT, site INT, urls TEXT, final_url TEXT, PRIMARY KEY(id))',
+    'CREATE TABLE IF NOT EXISTS redirects (id INTEGER PRIMARY KEY, data_set INT, ua INT, ua_type TINYTEXT, engine TINYTEXT, site INT, urls TEXT, final_url TEXT)',
     # a meta table for testdata sets, helps track data that belongs together..
-    'CREATE TABLE IF NOT EXISTS testdata_sets (id INT AUTO_INCREMENT, site INT, url TEXT, date TIMESTAMP, PRIMARY KEY(id))',
-    'CREATE TABLE IF NOT EXISTS watch (id INT AUTO_INCREMENT, site INT, bug_id TINYTEXT, `table` TINYTEXT, `field` TINYTEXT, `data` TEXT, ua_type TINYTEXT, match_means_fail TINYINT(1), date TIMESTAMP, PRIMARY KEY(id))'
+    'CREATE TABLE IF NOT EXISTS testdata_sets (id INTEGER PRIMARY KEY, site INT, url TEXT, date TIMESTAMP)',
+    'CREATE TABLE IF NOT EXISTS watch (id INTEGER PRIMARY KEY, site INT, bug_id TINYTEXT, `table` TINYTEXT, `field` TINYTEXT, `data` TEXT, ua_type TINYTEXT, match_means_fail TINYINT(1), date TIMESTAMP)'
 ]
 
 for query in table_queries:
@@ -111,15 +112,14 @@ for query in alter_queries:
     con.commit()
 dbdesc = {}
 tables = []
-cur_1.execute('SHOW TABLES')
+cur_1.execute('SELECT name FROM sqlite_master WHERE type="table"')
 for row in cur_1.fetchall():
-    tables.append(row.values()[0])
+    tables.append(row[0])
 for table in tables:
-    # print(table)
     dbdesc[table] = []
-    cur_1.execute('DESC %s' % table)
+    cur_1.execute('PRAGMA table_info(%s)' % table)
     for row in cur_1.fetchall():
-        dbdesc[table].append(row['Field'])
+        dbdesc[table].append(row[1])
 
 f = open('dbdesc.json', 'w')
 f.write(json.dumps(dbdesc, indent=2))
