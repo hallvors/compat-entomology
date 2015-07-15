@@ -3,29 +3,30 @@ import tldextract
 
 def get_existing_domain_id(datastr, insert_if_not_found=True):
     datastr_id = None
-    g.cur_1.execute('SELECT id FROM domains WHERE domain LIKE %s',  (datastr,))
-    if g.cur_1.rowcount > 0:
-        row = g.cur_1.fetchone()
+    g.cur_1.execute('SELECT id FROM domains WHERE domain LIKE ?',  (datastr,))
+    all_entries = g.cur_1.fetchall()
+    if len(all_entries) == 1:
+        row = all_entries[0]
         datastr_id = row['id']
     elif insert_if_not_found:
         g.cur_2.execute(
-            'INSERT INTO domains (domain) VALUES (%s)',  (datastr,))
+            'INSERT INTO domains (domain) VALUES (?)',  (datastr,))
         g.con.commit()
         datastr_id = g.cur_2.lastrowid
     return datastr_id
 
-def query_to_object(query, obj, prop, massage_method=None):
+def query_to_object(query, params, obj, prop, massage_method=None):
     try:
-        g.cur_1.execute(query)
+        g.cur_1.execute(query, params)
     except Exception, e:
         print(e)
     if prop not in obj:
         obj[prop] = []
-    for i in range(g.cur_1.rowcount):
+    for the_row in g.cur_1:
         if massage_method:
-            obj[prop].append(massage_method(g.cur_1.fetchone()))
+            obj[prop].append(massage_method(the_row))
         else:
-            obj[prop].append(g.cur_1.fetchone())
+            obj[prop].append(the_row)
 
 def describe_ua(uastr):
     # This will never be perfect. Just so you know I know that..
